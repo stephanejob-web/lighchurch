@@ -865,7 +865,7 @@ const LandingPage: React.FC = () => {
                                 </Typography>
                                 <Stack spacing={1.5}>
                                     <Box component="span" sx={{ cursor: 'pointer', '&:hover': { color: 'white' } }}>Confidentialité</Box>
-                                    <Box component="span" sx={{ cursor: 'pointer', '&:hover': { color: 'white' } }}>Conditions</Box>
+                                    <Box component="span" sx={{ cursor: 'pointer', '&:hover': { color: 'white' } }}>Conditions générales</Box>
                                 </Stack>
                             </Box>
                         </Box>
