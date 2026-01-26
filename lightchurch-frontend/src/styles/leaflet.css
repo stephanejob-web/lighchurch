@@ -1,0 +1,123 @@
+/* Leaflet core styles */
+@import 'leaflet/dist/leaflet.css';
+
+/* Leaflet MarkerCluster styles */
+@import 'leaflet.markercluster/dist/MarkerCluster.css';
+@import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+
+/* Custom marker styles */
+.custom-marker-church {
+  background-color: #d32f2f;
+  border: 3px solid white;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.custom-marker-event {
+  background-color: #ff9800;
+  border: 3px solid white;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.custom-marker-user-static {
+  background: transparent;
+  border: none;
+  width: 20px;
+  height: 20px;
+}
+
+.custom-marker-user-static svg {
+  overflow: visible;
+}
+
+.pulse-circle {
+  animation: svg-pulse 2s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes svg-pulse {
+  0% {
+    opacity: 0.8;
+    r: 6;
+  }
+
+  50% {
+    opacity: 0.3;
+    r: 9;
+  }
+
+  100% {
+    opacity: 0;
+    r: 12;
+  }
+}
+
+/* Popup styles */
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  padding: 0;
+}
+
+.leaflet-popup-content {
+  margin: 0;
+  min-width: 250px;
+}
+
+/* Cluster styles */
+.marker-cluster-small {
+  background-color: rgba(181, 226, 140, 0.6);
+}
+
+.marker-cluster-small div {
+  background-color: rgba(110, 204, 57, 0.6);
+}
+
+.marker-cluster-medium {
+  background-color: rgba(241, 211, 87, 0.6);
+}
+
+.marker-cluster-medium div {
+  background-color: rgba(240, 194, 12, 0.6);
+}
+
+.marker-cluster-large {
+  background-color: rgba(253, 156, 115, 0.6);
+}
+
+.marker-cluster-large div {
+  background-color: rgba(241, 128, 23, 0.6);
+}
+
+@keyframes marker-bounce {
+
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+
+  40% {
+    transform: translateY(-20px);
+  }
+
+  60% {
+    transform: translateY(-10px);
+  }
+}
+
+.marker-bounce svg {
+  animation: marker-bounce 1s ease infinite;
+}
