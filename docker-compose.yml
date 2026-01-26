@@ -1,7 +1,7 @@
 services:
   mysql:
     image: mysql:8.0
-    container_name: mysql-db
+    container_name: lightchurch-mysql
     restart: unless-stopped
     command: --default-time-zone='+01:00' --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     environment:
@@ -10,13 +10,11 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       TZ: Europe/Paris
-    ports:
-      - "${MYSQL_PORT:-3306}:3306"
     volumes:
-      - mysql-data:/var/lib/mysql
+      - /home/deploy/data/lightchurch/mysql:/var/lib/mysql
       - ./lightchurch-backend/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
     networks:
-      - app-network
+      - lightchurch-network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 20s
@@ -29,22 +27,20 @@ services:
     container_name: lightchurch-backend
     restart: unless-stopped
     volumes:
-      - ./lightchurch-backend/uploads:/app/uploads
+      - /home/deploy/data/lightchurch/uploads:/app/uploads
     environment:
       DB_HOST: mysql
       DB_USER: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
       DB_NAME: ${MYSQL_DATABASE}
       PORT: ${EXPRESS_PORT:-3000}
-      JWT_SECRET: ${JWT_SECRET:-super_secret_jwt_key}
+      JWT_SECRET: ${JWT_SECRET}
       TZ: Europe/Paris
-    ports:
-      - "${EXPRESS_PORT:-3000}:${EXPRESS_PORT:-3000}"
     depends_on:
       mysql:
         condition: service_healthy
     networks:
-      - app-network
+      - lightchurch-network
 
   frontend:
     build:
@@ -53,18 +49,14 @@ services:
     container_name: lightchurch-frontend
     restart: unless-stopped
     environment:
-      # Port du backend pour le reverse proxy nginx
       BACKEND_PORT: ${EXPRESS_PORT:-3000}
     ports:
-      - "${FRONTEND_PORT:-80}:80"
+      - "${FRONTEND_PORT:-3080}:80"
     depends_on:
       - backend
     networks:
-      - app-network
+      - lightchurch-network
 
 networks:
-  app-network:
+  lightchurch-network:
     driver: bridge
-
-volumes:
-  mysql-data:
