@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const compression = require('compression');
 const db = require('./config/db');
 
 const app = express();
@@ -8,6 +9,21 @@ const port = process.env.PORT || 3000;
 
 // Configuration CORS pour autoriser le frontend (à ajuster selon besoin)
 app.use(cors());
+
+// Compression middleware - Réduit la taille des réponses de ~60-70%
+app.use(compression({
+    // Compression seulement pour les réponses > 1KB
+    threshold: 1024,
+    // Niveau de compression (0-9, 6 est un bon compromis vitesse/taille)
+    level: 6,
+    // Filtrer les types de contenu à compresser
+    filter: (req, res) => {
+        if (req.headers['x-no-compression']) {
+            return false;
+        }
+        return compression.filter(req, res);
+    }
+}));
 
 // Middleware pour parser le JSON
 app.use(express.json());

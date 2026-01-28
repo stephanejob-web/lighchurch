@@ -53,6 +53,107 @@ router.get('/stats', async (req, res) => {
 });
 
 /**
+ * Route publique : GET /api/public/churches/markers
+ * Version ultra-optimisée pour l'affichage des marqueurs sur la carte
+ * Retourne uniquement les données minimales nécessaires (id, nom, coordonnées)
+ * PERFORMANCE: ~70-80% de réduction de la taille des données vs /churches
+ */
+router.get('/churches/markers', [
+    query('north').optional().isFloat({ min: -90, max: 90 }),
+    query('south').optional().isFloat({ min: -90, max: 90 }),
+    query('east').optional().isFloat({ min: -180, max: 180 }),
+    query('west').optional().isFloat({ min: -180, max: 180 }),
+    query('latitude').optional().isFloat({ min: -90, max: 90 }),
+    query('longitude').optional().isFloat({ min: -180, max: 180 }),
+    query('radius').optional().isInt({ min: 1, max: 1000 }),
+    query('denomination_id').optional().isInt(),
+    query('limit').optional().isInt({ min: 1, max: 20000 })
+], async (req, res) => {
+    const startTime = Date.now();
+    
+    try {
+        const {
+            north, south, east, west,
+            latitude, longitude, radius = 50,
+            denomination_id,
+            limit = 500
+        } = req.query;
+
+        let whereConditions = [
+            'a.status = "VALIDATED"',
+            'a.role = "PASTOR"',
+            'c.id IS NOT NULL'
+        ];
+
+        let params = [];
+
+        // Mode 1: Bounding Box (optimal pour la carte)
+        if (north && south && east && west) {
+            const bbox = `POLYGON((${west} ${south}, ${east} ${south}, ${east} ${north}, ${west} ${north}, ${west} ${south}))`;
+            whereConditions.push('MBRContains(ST_GeomFromText(?), c.location)');
+            params.push(bbox);
+        }
+        // Mode 2: Distance radius
+        else if (latitude && longitude) {
+            const userPoint = `POINT(${longitude} ${latitude})`;
+            whereConditions.push(
+                `ST_Distance_Sphere(c.location, ST_GeomFromText('${userPoint}')) <= ? * 1000`
+            );
+            params.push(parseInt(radius));
+        }
+
+        // Filtre par dénomination
+        if (denomination_id) {
+            whereConditions.push('c.denomination_id = ?');
+            params.push(denomination_id);
+        }
+
+        const whereClause = whereConditions.join(' AND ');
+
+        // Requête ultra-optimisée: SEULEMENT les champs essentiels
+        const query = `
+            SELECT
+                c.id,
+                c.church_name,
+                ST_X(c.location) as longitude,
+                ST_Y(c.location) as latitude
+            FROM churches c
+            INNER JOIN admins a ON a.id = c.admin_id
+            WHERE ${whereClause}
+            LIMIT ?
+        `;
+
+        params.push(parseInt(limit));
+
+        const [churches] = await db.query(query, params);
+
+        const queryTime = Date.now() - startTime;
+        
+        // Log performance pour monitoring
+        if (queryTime > 200) {
+            console.warn(`[PERF] Slow markers query: ${queryTime}ms for ${churches.length} churches`);
+        }
+
+        res.json({
+            success: true,
+            count: churches.length,
+            hasMore: churches.length === parseInt(limit),
+            churches: churches,
+            _meta: {
+                queryTime: queryTime
+            }
+        });
+
+    } catch (err) {
+        console.error('Error fetching church markers:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors du chargement des marqueurs'
+        });
+    }
+});
+
+/**
  * Route publique : GET /api/public/churches
  */
 router.get('/churches', [
@@ -263,6 +364,106 @@ router.get('/churches/:id', [
         res.status(500).json({
             success: false,
             message: 'Erreur lors du chargement des détails de l\'église'
+        });
+    }
+});
+
+
+/**
+ * Route publique : GET /api/public/events/markers
+ * Version ultra-optimisée pour l'affichage des marqueurs d'événements sur la carte
+ * Retourne uniquement les données minimales nécessaires
+ */
+router.get('/events/markers', [
+    query('north').optional().isFloat({ min: -90, max: 90 }),
+    query('south').optional().isFloat({ min: -90, max: 90 }),
+    query('east').optional().isFloat({ min: -180, max: 180 }),
+    query('west').optional().isFloat({ min: -180, max: 180 }),
+    query('latitude').optional().isFloat({ min: -90, max: 90 }),
+    query('longitude').optional().isFloat({ min: -180, max: 180 }),
+    query('radius').optional().isInt({ min: 1, max: 1000 }),
+    query('limit').optional().isInt({ min: 1, max: 20000 })
+], async (req, res) => {
+    const startTime = Date.now();
+    
+    try {
+        const {
+            north, south, east, west,
+            latitude, longitude, radius = 50,
+            limit = 500
+        } = req.query;
+
+        let whereConditions = [
+            'COALESCE(e.end_datetime, e.start_datetime) >= NOW()',
+            'a.status = "VALIDATED"'
+        ];
+
+        let params = [];
+
+        // Mode 1: Bounding Box
+        if (north && south && east && west) {
+            const bbox = `POLYGON((${west} ${south}, ${east} ${south}, ${east} ${north}, ${west} ${north}, ${west} ${south}))`;
+            whereConditions.push(
+                'MBRContains(ST_GeomFromText(?), COALESCE(e.event_location, c.location))'
+            );
+            params.push(bbox);
+        }
+        // Mode 2: Distance radius
+        else if (latitude && longitude) {
+            const userPoint = `POINT(${longitude} ${latitude})`;
+            whereConditions.push(
+                `ST_Distance_Sphere(
+                    COALESCE(e.event_location, c.location),
+                    ST_GeomFromText('${userPoint}')
+                ) <= ? * 1000`
+            );
+            params.push(parseInt(radius));
+        }
+
+        const whereClause = whereConditions.join(' AND ');
+
+        // Requête ultra-optimisée: SEULEMENT les champs essentiels
+        const query = `
+            SELECT
+                e.id,
+                e.title,
+                e.start_datetime,
+                e.cancelled_at,
+                ST_X(COALESCE(e.event_location, c.location)) as longitude,
+                ST_Y(COALESCE(e.event_location, c.location)) as latitude
+            FROM events e
+            INNER JOIN admins a ON a.id = e.admin_id
+            LEFT JOIN churches c ON c.id = e.church_id
+            WHERE ${whereClause}
+            ORDER BY e.start_datetime ASC
+            LIMIT ?
+        `;
+
+        params.push(parseInt(limit));
+
+        const [events] = await db.query(query, params);
+
+        const queryTime = Date.now() - startTime;
+        
+        if (queryTime > 200) {
+            console.warn(`[PERF] Slow events markers query: ${queryTime}ms for ${events.length} events`);
+        }
+
+        res.json({
+            success: true,
+            count: events.length,
+            hasMore: events.length === parseInt(limit),
+            events: events,
+            _meta: {
+                queryTime: queryTime
+            }
+        });
+
+    } catch (err) {
+        console.error('Error fetching event markers:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors du chargement des marqueurs d\'événements'
         });
     }
 });

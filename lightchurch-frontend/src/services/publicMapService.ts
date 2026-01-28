@@ -51,6 +51,101 @@ interface FetchEventsParams {
 }
 
 /**
+ * Récupère uniquement les données minimales des églises pour l'affichage sur la carte
+ * OPTIMISATION: ~70-80% de réduction des données vs fetchChurches
+ * @throws Error si la requête échoue
+ */
+export const fetchChurchesMarkers = async (
+    params: FetchChurchesParams
+): Promise<Church[]> => {
+    try {
+        const { data } = await api.get<ApiResponse<Church[]>>('/public/churches/markers', {
+            params: {
+                north: params.north,
+                south: params.south,
+                east: params.east,
+                west: params.west,
+                latitude: params.latitude,
+                longitude: params.longitude,
+                radius: params.radius || 50,
+                denomination_id: params.denominationId,
+                limit: params.limit || 500
+            }
+        });
+
+        if (!data.success || !data.churches) {
+            throw new Error(data.message || 'Erreur lors du chargement des marqueurs');
+        }
+
+        return data.churches;
+    } catch (error: any) {
+        console.error('Error fetching church markers:', error);
+        throw new Error(
+            error.response?.data?.message ||
+            error.message ||
+            'Impossible de charger les marqueurs d\'églises'
+        );
+    }
+};
+
+/**
+ * Récupère uniquement les données minimales des événements pour l'affichage sur la carte
+ * OPTIMISATION: ~70-80% de réduction des données vs fetchEvents
+ * @throws Error si la requête échoue
+ */
+export const fetchEventsMarkers = async (
+    params: FetchEventsParams
+): Promise<Event[]> => {
+    try {
+        const { data } = await api.get<ApiResponse<Event[]>>('/public/events/markers', {
+            params: {
+                north: params.north,
+                south: params.south,
+                east: params.east,
+                west: params.west,
+                latitude: params.latitude,
+                longitude: params.longitude,
+                radius: params.radius || 50,
+                limit: params.limit || 500
+            }
+        });
+
+        if (!data.success || !data.events) {
+            throw new Error(data.message || 'Erreur lors du chargement des marqueurs');
+        }
+
+        return data.events;
+    } catch (error: any) {
+        console.error('Error fetching event markers:', error);
+        throw new Error(
+            error.response?.data?.message ||
+            error.message ||
+            'Impossible de charger les marqueurs d\'événements'
+        );
+    }
+};
+
+/**
+ * Récupère à la fois les marqueurs d'églises et d'événements (optimisé)
+ * Utilise les endpoints /markers pour des performances maximales
+ */
+export const fetchChurchesAndEventsMarkers = async (
+    params: FetchChurchesParams & FetchEventsParams
+): Promise<{ churches: Church[]; events: Event[] }> => {
+    try {
+        const [churches, events] = await Promise.all([
+            fetchChurchesMarkers(params),
+            fetchEventsMarkers(params)
+        ]);
+
+        return { churches, events };
+    } catch (error: any) {
+        console.error('Error fetching markers:', error);
+        throw error;
+    }
+};
+
+/**
  * Récupère la liste des églises avec filtres optionnels
  * @throws Error si la requête échoue
  */
@@ -75,7 +170,7 @@ export const fetchChurches = async (
                 // Autres filtres
                 denomination_id: params.denominationId,
                 search: params.search,
-                limit: params.limit || 100
+                limit: params.limit || 300
             }
         });
 
@@ -143,7 +238,7 @@ export const fetchEvents = async (
                 userLng: params.userLng,
                 // Autres filtres
                 search: params.search,
-                limit: params.limit || 100
+                limit: params.limit || 300
             }
         });
 

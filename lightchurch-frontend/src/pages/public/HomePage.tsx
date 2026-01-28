@@ -20,14 +20,14 @@ import {
     Remove as RemoveIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
-import MarkerClusterGroup from 'react-leaflet-cluster';
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents, Tooltip as LeafletTooltip } from 'react-leaflet';
+import { useSupercluster } from '../../hooks/useSupercluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import '../../styles/leaflet.css';
 import type { Church, Event, UserLocation } from '../../types/publicMap';
 import {
-    fetchChurchesAndEvents,
+    fetchChurchesAndEventsMarkers,
     getUserLocation,
 } from '../../services/publicMapService';
 
@@ -46,6 +46,9 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+// OPTIMIZATION: Load all data at once
+const FETCH_LIMIT = 15000;
+
 // MapCenter Component (Same as before)
 interface MapCenterProps {
     center: [number, number];
@@ -60,14 +63,14 @@ const MapCenter: React.FC<MapCenterProps> = React.memo(({ center, zoom = 2 }) =>
 });
 MapCenter.displayName = 'MapCenter';
 
-// MapEventsHandler Component (Same as before)
+// MapEventsHandler Component - tracks bounds and zoom
 interface MapEventsHandlerProps {
-    onBoundsChange: (bounds: L.LatLngBounds) => void;
+    onBoundsChange: (bounds: L.LatLngBounds, zoom: number) => void;
 }
 const MapEventsHandler: React.FC<MapEventsHandlerProps> = React.memo(({ onBoundsChange }) => {
     const map = useMapEvents({
-        moveend: () => onBoundsChange(map.getBounds()),
-        zoomend: () => onBoundsChange(map.getBounds())
+        moveend: () => onBoundsChange(map.getBounds(), map.getZoom()),
+        zoomend: () => onBoundsChange(map.getBounds(), map.getZoom())
     });
     return null;
 });
@@ -208,6 +211,64 @@ const userIconInstance = L.divIcon({
     popupAnchor: [0, -10]
 });
 
+// OPTIMIZED: Cluster icons with caching for maximum performance
+const churchClusterIconCache = new Map<string, L.DivIcon>();
+const eventClusterIconCache = new Map<string, L.DivIcon>();
+
+const getClusterSize = (count: number): number => {
+    // Discrete sizes for better caching (fewer unique icons)
+    if (count < 10) return 32;
+    if (count < 50) return 36;
+    if (count < 100) return 40;
+    if (count < 500) return 46;
+    if (count < 1000) return 52;
+    return 58;
+};
+
+const formatCount = (count: number): string => {
+    if (count >= 10000) return Math.round(count / 1000) + 'k';
+    if (count >= 1000) return (count / 1000).toFixed(1) + 'k';
+    return count.toString();
+};
+
+const createChurchClusterIcon = (count: number): L.DivIcon => {
+    const size = getClusterSize(count);
+    const cacheKey = `${size}-${formatCount(count)}`;
+
+    if (churchClusterIconCache.has(cacheKey)) {
+        return churchClusterIconCache.get(cacheKey)!;
+    }
+
+    const icon = L.divIcon({
+        className: 'cluster-church',
+        html: `<div class="cluster-icon" style="width:${size}px;height:${size}px;background:#4285F4;border-radius:50%;border:2px solid #fff;color:#fff;font:bold 12px Arial;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.3)">${formatCount(count)}</div>`,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2]
+    });
+
+    churchClusterIconCache.set(cacheKey, icon);
+    return icon;
+};
+
+const createEventClusterIcon = (count: number): L.DivIcon => {
+    const size = getClusterSize(count);
+    const cacheKey = `${size}-${formatCount(count)}`;
+
+    if (eventClusterIconCache.has(cacheKey)) {
+        return eventClusterIconCache.get(cacheKey)!;
+    }
+
+    const icon = L.divIcon({
+        className: 'cluster-event',
+        html: `<div class="cluster-icon" style="width:${size}px;height:${size}px;background:#EA4335;border-radius:50%;border:2px solid #fff;color:#fff;font:bold 12px Arial;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.3)">${formatCount(count)}</div>`,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2]
+    });
+
+    eventClusterIconCache.set(cacheKey, icon);
+    return icon;
+};
+
 interface HomePageProps {
     viewMode?: 'explore' | 'participations';
 }
@@ -239,10 +300,14 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
     // Map Type
     const [mapType, setMapType] = useState<'standard' | 'satellite'>('satellite');
 
+    // Supercluster state for performance
+    const [currentZoom, setCurrentZoom] = useState<number>(6);
+    const [currentBounds, setCurrentBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
+
     // Refs
     const boundsChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const isFirstLoadRef = useRef(true);
-    const abortControllerRef = useRef<AbortController | null>(null);
+    // const isFirstLoadRef = useRef(true); // Removed as unused
+    // const abortControllerRef = useRef<AbortController | null>(null); // No longer needed for single load
 
     // Smart markers: Filter out churches that have events at the same location
     const filteredChurches = useMemo(() => {
@@ -252,46 +317,76 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
 
         // Create a Set of event coordinates for fast lookup
         const eventCoordinates = new Set(
-            events.map(event => `${event.latitude.toFixed(6)},${event.longitude.toFixed(6)}`)
+            events
+                .filter(e => e.latitude != null && e.longitude != null)
+                .map(event => `${Number(event.latitude).toFixed(6)},${Number(event.longitude).toFixed(6)}`)
         );
 
         // Filter out churches that have an event at the same location
         return churches.filter(church => {
-            const churchCoord = `${church.latitude.toFixed(6)},${church.longitude.toFixed(6)}`;
+            if (church.latitude == null || church.longitude == null) return false;
+            const churchCoord = `${Number(church.latitude).toFixed(6)},${Number(church.longitude).toFixed(6)}`;
             return !eventCoordinates.has(churchCoord);
         });
     }, [churches, events, showEvents]);
 
+    // Supercluster for ultra-fast clustering (using optimized defaults)
+    const { churchClusters, eventClusters, getClusterExpansionZoom } = useSupercluster(
+        showChurches ? filteredChurches : [],
+        showEvents ? events : [],
+        currentBounds,
+        currentZoom
+    );
+
     // Initialization (Geo) - Optional, falls back to France center
+    // Initialization (Geo & Data)
     useEffect(() => {
         const initializeMap = async () => {
             setLoading(true);
             try {
+                // 1. Get User Location (Parallel with data fetch if possible, but location centers map)
                 const position = await getUserLocation();
+                
                 if (position) {
                     const { latitude, longitude } = position.coords;
                     setUserLocation({ latitude, longitude });
                     setMapCenter([latitude, longitude]);
                     setMapZoom(13);
                 } else {
-                    // No geolocation: center on France
                     console.log('Geolocation not available, centering on France');
-                    setMapCenter([46.603354, 1.888334]); // Center of France
+                    setMapCenter([46.603354, 1.888334]); 
                     setMapZoom(6);
                     setShowGeoAlert(true);
                 }
+
+                // 2. LOAD ALL DATA AT ONCE (Optimization for < 20k items)
+                // We fetch everything regardless of bounds
+                const data = await fetchChurchesAndEventsMarkers({
+                    limit: FETCH_LIMIT
+                });
+                
+                // Filter out any invalid data to prevent crashes
+                const validChurches = (data.churches || []).filter(c => c && typeof c.latitude === 'number' && typeof c.longitude === 'number');
+                const validEvents = (data.events || []).filter(e => e && typeof e.latitude === 'number' && typeof e.longitude === 'number');
+
+                setChurches(validChurches);
+                setEvents(validEvents);
+
             } catch (err: any) {
-                console.error('Error getting location:', err);
-                // Geolocation denied/failed: center on France
-                setMapCenter([46.603354, 1.888334]); // Center of France
-                setMapZoom(6);
-                setShowGeoAlert(true);
+                console.error('Error initializing map:', err);
+                setError('Impossible de charger les données. Vérifiez votre connexion.');
+                // Fallback center if location failed
+                if (!userLocation) {
+                    setMapCenter([46.603354, 1.888334]);
+                    setMapZoom(6);
+                }
             } finally {
                 setLoading(false);
                 setTimeout(() => setIsMapReady(true), 500);
             }
         };
         initializeMap();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Debug logging
@@ -300,7 +395,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
     // Cleanup
     useEffect(() => {
         return () => {
-            if (abortControllerRef.current) abortControllerRef.current.abort();
+            // if (abortControllerRef.current) abortControllerRef.current.abort(); // Removed
             if (boundsChangeTimeoutRef.current) clearTimeout(boundsChangeTimeoutRef.current);
         };
     }, []);
@@ -392,66 +487,26 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
         return () => { mounted = false; window.removeEventListener('light_church:focus_event', handler as EventListener); };
     }, []);
 
-    // Load Data
+    // Load Data - REMOVED (Replaced by load-all in mount effect)
+    /* 
     const loadDataForBounds = useCallback(async (bounds: L.LatLngBounds) => {
-        if (abortControllerRef.current) abortControllerRef.current.abort();
-        const abortController = new AbortController();
-        abortControllerRef.current = abortController;
-
-        try {
-            setLoading(true);
-            setError(null);
-
-            let data;
-            if (isMobile && userLocation) {
-                data = await fetchChurchesAndEvents({
-                    latitude: userLocation.latitude,
-                    longitude: userLocation.longitude,
-                    radius: 15,
-                    userLat: userLocation.latitude,
-                    userLng: userLocation.longitude,
-                    limit: 100
-                });
-            } else {
-                data = await fetchChurchesAndEvents({
-                    north: bounds.getNorth(),
-                    south: bounds.getSouth(),
-                    east: bounds.getEast(),
-                    west: bounds.getWest(),
-                    userLat: userLocation?.latitude,
-                    userLng: userLocation?.longitude,
-                    limit: 100
-                });
-            }
-
-            if (!abortController.signal.aborted) {
-                setChurches(data.churches);
-                setEvents(data.events);
-            }
-        } catch (err: any) {
-            if (err.name !== 'AbortError' && !abortController.signal.aborted) {
-                console.error('Error loading data:', err);
-                setError('Impossible de charger les données. Vérifiez votre connexion.');
-            }
-        } finally {
-            if (!abortController.signal.aborted) setLoading(false);
-        }
+        ... removed code ...
     }, [userLocation, isMobile]);
+    */
 
-    // Bounds Change Handler
-    const handleBoundsChange = useCallback((bounds: L.LatLngBounds) => {
-        if (isFirstLoadRef.current) {
-            isFirstLoadRef.current = false;
-            loadDataForBounds(bounds);
-            return;
-        }
-        if (isMobile && userLocation) return;
-
-        if (boundsChangeTimeoutRef.current) clearTimeout(boundsChangeTimeoutRef.current);
-        boundsChangeTimeoutRef.current = setTimeout(() => {
-            loadDataForBounds(bounds);
-        }, 500);
-    }, [loadDataForBounds, isMobile, userLocation]);
+    // Bounds Change Handler - Only updates Supercluster state now
+    const handleBoundsChange = useCallback((bounds: L.LatLngBounds, zoom: number) => {
+        // Update supercluster state immediately for smooth clustering
+        setCurrentZoom(zoom);
+        setCurrentBounds({
+            north: bounds.getNorth(),
+            south: bounds.getSouth(),
+            east: bounds.getEast(),
+            west: bounds.getWest()
+        });
+        
+        // No network request triggers here anymore!
+    }, []);
 
     // Interactions
     const handleRecenterMap = useCallback(() => {
@@ -604,7 +659,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                             size="small"
                             onClick={() => {
                                 setError(null);
-                                // Reload data by triggering bounds change
+                                // Reload page to retry
                                 window.location.reload();
                             }}
                             sx={{ fontWeight: 600 }}
@@ -797,31 +852,140 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                     <Marker position={[userLocation.latitude, userLocation.longitude]} icon={userIconInstance} />
                 )}
 
-                <MarkerClusterGroup chunkedLoading>
-                    {showChurches && filteredChurches.map(church => (
+                {/* Supercluster-powered rendering for maximum performance */}
+                {/* Church clusters and markers */}
+                {churchClusters.map((cluster: any) => {
+                    const [lng, lat] = cluster.geometry.coordinates;
+                    const isCluster = cluster.properties.cluster;
+
+                    if (isCluster) {
+                        const pointCount = cluster.properties.point_count;
+                        return (
+                            <Marker
+                                key={`church-cluster-${cluster.properties.cluster_id}`}
+                                position={[lat, lng]}
+                                icon={createChurchClusterIcon(pointCount)}
+                                eventHandlers={{
+                                    click: (e: L.LeafletMouseEvent) => {
+                                        const expansionZoom = getClusterExpansionZoom(cluster.properties.cluster_id, 'church');
+                                        e.target._map.setView([lat, lng], Math.min(expansionZoom + 1, 18));
+                                    }
+                                }}
+                            >
+                                <LeafletTooltip direction="top" offset={[0, -15]} opacity={0.95}>
+                                    <span style={{ fontWeight: 'bold' }}>{pointCount} églises</span> dans cette zone
+                                </LeafletTooltip>
+                            </Marker>
+                        );
+                    }
+
+                    const church = cluster.properties.item;
+                    if (!church) return null;
+                    const isSelected = selectedItem?.id === church.id && selectedType === 'church';
+                    return (
                         <Marker
                             key={`church-${church.id}`}
-                            position={[church.latitude, church.longitude]}
-                            icon={selectedItem?.id === church.id && selectedType === 'church' ? selectedChurchIcon : churchIcon}
+                            position={[lat, lng]}
+                            icon={isSelected ? selectedChurchIcon : churchIcon}
                             eventHandlers={{ click: () => handleMarkerClick(church, 'church') }}
-                            zIndexOffset={selectedItem?.id === church.id ? 1000 : 0}
-                        />
-                    ))}
-                    {showEvents && events.map(event => (
+                            zIndexOffset={isSelected ? 1000 : 0}
+                        >
+                            <LeafletTooltip direction="top" offset={[0, -15]} opacity={0.95}>
+                                {church.church_name}
+                            </LeafletTooltip>
+                        </Marker>
+                    );
+                })}
+
+                {/* Event clusters and markers */}
+                {eventClusters.map((cluster: any) => {
+                    const [lng, lat] = cluster.geometry.coordinates;
+                    const isCluster = cluster.properties.cluster;
+
+                    if (isCluster) {
+                        const pointCount = cluster.properties.point_count;
+                        return (
+                            <Marker
+                                key={`event-cluster-${cluster.properties.cluster_id}`}
+                                position={[lat, lng]}
+                                icon={createEventClusterIcon(pointCount)}
+                                eventHandlers={{
+                                    click: (e: L.LeafletMouseEvent) => {
+                                        const expansionZoom = getClusterExpansionZoom(cluster.properties.cluster_id, 'event');
+                                        e.target._map.setView([lat, lng], Math.min(expansionZoom + 1, 18));
+                                    }
+                                }}
+                            >
+                                <LeafletTooltip direction="top" offset={[0, -15]} opacity={0.95}>
+                                    <span style={{ fontWeight: 'bold' }}>{pointCount} événements</span> dans cette zone
+                                </LeafletTooltip>
+                            </Marker>
+                        );
+                    }
+
+                    const event = cluster.properties.item;
+                    if (!event) return null;
+                    const isSelected = selectedItem?.id === event.id && selectedType === 'event';
+                    const isParticipating = localParticipations.has(event.id);
+                    return (
                         <Marker
                             key={`event-${event.id}`}
-                            position={[event.latitude, event.longitude]}
+                            position={[lat, lng]}
                             icon={
-                                selectedItem?.id === event.id && selectedType === 'event'
-                                    ? (localParticipations.has(event.id) ? participatingEventSelectedIcon : selectedEventIcon)
-                                    : (localParticipations.has(event.id) ? participatingEventIcon : eventIcon)
+                                isSelected
+                                    ? (isParticipating ? participatingEventSelectedIcon : selectedEventIcon)
+                                    : (isParticipating ? participatingEventIcon : eventIcon)
                             }
                             eventHandlers={{ click: () => handleMarkerClick(event, 'event') }}
-                            zIndexOffset={selectedItem?.id === event.id ? 1000 : 0}
-                        />
-                    ))}
-                </MarkerClusterGroup>
+                            zIndexOffset={isSelected ? 1000 : 0}
+                        >
+                            <LeafletTooltip direction="top" offset={[0, -15]} opacity={0.95}>
+                                {event.title}
+                            </LeafletTooltip>
+                        </Marker>
+                    );
+                })}
             </MapContainer>
+
+            {/* Map Legend */}
+            <Paper
+                elevation={2}
+                sx={{
+                    position: 'absolute',
+                    bottom: isMobile ? 80 : 24,
+                    left: isMobile ? 24 : 464,
+                    zIndex: 1000,
+                    p: 1.5,
+                    borderRadius: 2,
+                    bgcolor: 'rgba(255, 255, 255, 0.95)',
+                    backdropFilter: 'blur(10px)',
+                }}
+            >
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{
+                            width: 16,
+                            height: 16,
+                            borderRadius: '50%',
+                            background: 'linear-gradient(135deg, #4285F4 0%, #2563eb 100%)',
+                            border: '2px solid white',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                        }} />
+                        <Box component="span" sx={{ fontSize: 13, color: '#333' }}>Églises</Box>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{
+                            width: 16,
+                            height: 16,
+                            borderRadius: '50%',
+                            background: 'linear-gradient(135deg, #EA4335 0%, #dc2626 100%)',
+                            border: '2px solid white',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                        }} />
+                        <Box component="span" sx={{ fontSize: 13, color: '#333' }}>Événements</Box>
+                    </Box>
+                </Box>
+            </Paper>
 
             {/* 4. Floating Action Buttons (Bottom Right) */}
             <Box sx={{ position: 'absolute', bottom: 24, right: 24, display: 'flex', flexDirection: 'column', gap: 2, zIndex: 1000 }}>
