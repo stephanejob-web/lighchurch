@@ -806,7 +806,8 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                         onEventClick={(e) => handleMarkerClick(e, 'event')}
                                         onClose={() => setResultsPanelOpen(false)} open={resultsPanelOpen}
                                         isGeolocated={!!userLocation} isMobileView
-                                        currentBounds={currentBounds} />
+                                        currentBounds={currentBounds}
+                                        userLocation={userLocation} />
                                 )}
                             </Box>
                         </Box>
@@ -842,7 +843,8 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                 onChurchClick={(c) => handleMarkerClick(c, 'church')}
                                 onEventClick={(e) => handleMarkerClick(e, 'event')}
                                 isGeolocated={!!userLocation} isMobileView={false}
-                                currentBounds={currentBounds} />
+                                currentBounds={currentBounds}
+                                userLocation={userLocation} />
                         )}
                     </Box>
                 </Sidebar>

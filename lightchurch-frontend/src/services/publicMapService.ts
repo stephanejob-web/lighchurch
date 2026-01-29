@@ -226,7 +226,10 @@ export const fetchChurchesPaginated = async (
                 denomination_id: params.denominationId,
                 search: params.search,
                 limit: limit,
-                offset: params.offset || 0
+                offset: params.offset || 0,
+                // Coordonnées utilisateur pour calcul de distance
+                userLat: params.userLat,
+                userLng: params.userLng
             }
         });
 
@@ -265,7 +268,10 @@ export const fetchEventsPaginated = async (
                 radius: params.radius || 50,
                 search: params.search,
                 limit: limit,
-                offset: params.offset || 0
+                offset: params.offset || 0,
+                // Coordonnées utilisateur pour calcul de distance
+                userLat: params.userLat,
+                userLng: params.userLng
             }
         });
 

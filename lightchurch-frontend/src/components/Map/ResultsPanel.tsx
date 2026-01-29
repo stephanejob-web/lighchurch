@@ -39,6 +39,11 @@ interface MapBounds {
     west: number;
 }
 
+interface UserLocation {
+    latitude: number;
+    longitude: number;
+}
+
 interface ResultsPanelProps {
     onChurchClick: (church: Church) => void;
     onEventClick: (event: Event) => void;
@@ -47,6 +52,7 @@ interface ResultsPanelProps {
     isGeolocated?: boolean;
     isMobileView?: boolean;
     currentBounds?: MapBounds | null;
+    userLocation?: UserLocation | null;
 }
 
 const PAGE_SIZE = 20;
@@ -271,7 +277,8 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
     onEventClick,
     onClose,
     open = true,
-    currentBounds
+    currentBounds,
+    userLocation
 }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -333,9 +340,12 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
             setInitialLoadDone(false);
 
             try {
+                // Inclure les coordonnées utilisateur pour le calcul de distance
+                const userParams = userLocation ? { userLat: userLocation.latitude, userLng: userLocation.longitude } : {};
+
                 const [churchResult, eventResult] = await Promise.all([
-                    filterChurches ? fetchChurchesPaginated({ ...currentBounds, limit: PAGE_SIZE, offset: 0 }) : Promise.resolve({ data: [], hasMore: false }),
-                    filterEvents ? fetchEventsPaginated({ ...currentBounds, limit: PAGE_SIZE, offset: 0 }) : Promise.resolve({ data: [], hasMore: false })
+                    filterChurches ? fetchChurchesPaginated({ ...currentBounds, ...userParams, limit: PAGE_SIZE, offset: 0 }) : Promise.resolve({ data: [], hasMore: false }),
+                    filterEvents ? fetchEventsPaginated({ ...currentBounds, ...userParams, limit: PAGE_SIZE, offset: 0 }) : Promise.resolve({ data: [], hasMore: false })
                 ]);
 
                 setChurches(churchResult.data);
@@ -357,7 +367,7 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
                 clearTimeout(fetchTimeoutRef.current);
             }
         };
-    }, [currentBounds, filterChurches, filterEvents]);
+    }, [currentBounds, filterChurches, filterEvents, userLocation]);
 
     // Charger plus de données au scroll
     const loadMore = useCallback(async () => {
@@ -366,17 +376,20 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
 
         setIsLoadingMore(true);
 
+        // Inclure les coordonnées utilisateur pour le calcul de distance
+        const userParams = userLocation ? { userLat: userLocation.latitude, userLng: userLocation.longitude } : {};
+
         try {
             const promises: Promise<any>[] = [];
 
             if (filterChurches && hasMoreChurches) {
-                promises.push(fetchChurchesPaginated({ ...currentBounds, limit: PAGE_SIZE, offset: churchOffset }));
+                promises.push(fetchChurchesPaginated({ ...currentBounds, ...userParams, limit: PAGE_SIZE, offset: churchOffset }));
             } else {
                 promises.push(Promise.resolve(null));
             }
 
             if (filterEvents && hasMoreEvents) {
-                promises.push(fetchEventsPaginated({ ...currentBounds, limit: PAGE_SIZE, offset: eventOffset }));
+                promises.push(fetchEventsPaginated({ ...currentBounds, ...userParams, limit: PAGE_SIZE, offset: eventOffset }));
             } else {
                 promises.push(Promise.resolve(null));
             }
@@ -399,7 +412,7 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
         } finally {
             setIsLoadingMore(false);
         }
-    }, [currentBounds, churchOffset, eventOffset, hasMoreChurches, hasMoreEvents, filterChurches, filterEvents, isLoadingMore]);
+    }, [currentBounds, churchOffset, eventOffset, hasMoreChurches, hasMoreEvents, filterChurches, filterEvents, isLoadingMore, userLocation]);
 
     // Intersection Observer pour le scroll infini
     useEffect(() => {
