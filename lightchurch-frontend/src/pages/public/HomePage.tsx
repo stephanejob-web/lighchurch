@@ -17,13 +17,13 @@ import {
     Remove as RemoveIcon,
     Undo as UndoIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import '../../styles/leaflet.css';
 import type { Church, Event, UserLocation } from '../../types/publicMap';
-import { fetchChurchesAndEventsMarkers, getUserLocation } from '../../services/publicMapService';
+import { fetchChurchesAndEventsMarkers, getUserLocation, fetchChurchDetails } from '../../services/publicMapService';
 import { useSupercluster } from '../../hooks/useSupercluster';
 
 // UI Components
@@ -437,6 +437,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
 
     // ========== MAP REFERENCE ==========
     const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
@@ -720,6 +721,30 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
         return () => window.removeEventListener('light_church:interests_updated', refresh);
     }, []);
 
+    // ========== HANDLE URL PARAM church_id (Aperçu Public) ==========
+    useEffect(() => {
+        const churchId = searchParams.get('church_id');
+        if (churchId && mapInstance) {
+            const loadChurch = async () => {
+                try {
+                    const church = await fetchChurchDetails(parseInt(churchId));
+                    if (church && church.latitude && church.longitude) {
+                        // Centrer la carte sur l'église
+                        mapInstance.flyTo([church.latitude, church.longitude], 16, { duration: 1 });
+
+                        // Ouvrir le drawer avec les détails de l'église
+                        setSelectedItem(church);
+                        setSelectedType('church');
+                        setDetailDrawerOpen(true);
+                    }
+                } catch (error) {
+                    console.error('Error loading church from URL:', error);
+                }
+            };
+            loadChurch();
+        }
+    }, [searchParams, mapInstance]);
+
     // ========== HANDLERS ==========
     const handleBoundsChange = useCallback((bounds: any, zoom: number) => {
         setCurrentBounds(bounds);
@@ -856,8 +881,23 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                     <DetailDrawer open={detailDrawerOpen} onClose={handleCloseDrawer} loading={!selectedItem}
                         data={selectedItem} type={selectedType}
                         onOrganizerClick={async (id) => {
+                            // D'abord chercher dans les églises locales
                             const c = churches.find(c => String(c.id) === String(id));
-                            if (c) handleMarkerClick(c, 'church');
+                            if (c) {
+                                handleMarkerClick(c, 'church');
+                            } else {
+                                // Si non trouvée, récupérer depuis l'API et centrer la carte
+                                try {
+                                    const church = await fetchChurchDetails(Number(id));
+                                    if (church && church.latitude && church.longitude) {
+                                        mapInstance?.flyTo([church.latitude, church.longitude], 16, { duration: 1 });
+                                        setSelectedItem(church);
+                                        setSelectedType('church');
+                                    }
+                                } catch (error) {
+                                    console.error('Error fetching organizer church:', error);
+                                }
+                            }
                         }} />
                 </>
             ) : (
@@ -873,8 +913,23 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                             <DetailDrawer embedded open onClose={handleCloseDrawer} loading={!selectedItem}
                                 data={selectedItem} type={selectedType}
                                 onOrganizerClick={async (id) => {
+                                    // D'abord chercher dans les églises locales
                                     const c = churches.find(c => String(c.id) === String(id));
-                                    if (c) handleMarkerClick(c, 'church');
+                                    if (c) {
+                                        handleMarkerClick(c, 'church');
+                                    } else {
+                                        // Si non trouvée, récupérer depuis l'API et centrer la carte
+                                        try {
+                                            const church = await fetchChurchDetails(Number(id));
+                                            if (church && church.latitude && church.longitude) {
+                                                mapInstance?.flyTo([church.latitude, church.longitude], 16, { duration: 1 });
+                                                setSelectedItem(church);
+                                                setSelectedType('church');
+                                            }
+                                        } catch (error) {
+                                            console.error('Error fetching organizer church:', error);
+                                        }
+                                    }
                                 }} />
                         ) : viewMode === 'participations' ? (
                             <MyParticipationsSidebar onEventClick={(e) => handleMarkerClick(e, 'event')} />
