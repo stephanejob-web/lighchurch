@@ -679,9 +679,8 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
         return merged;
     }, [currentZoom, clusters, dataState.serverClusters.churchClusters, dataState.serverClusters.eventClusters]);
 
-    // Final values for components
+    // Final values for components (churches utilisé pour onOrganizerClick dans DetailDrawer)
     const churches = dataState.churches;
-    const events = dataState.events;
 
     // ========== GET USER LOCATION ==========
     useEffect(() => {
@@ -802,7 +801,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                 {viewMode === 'participations' ? (
                                     <MyParticipationsSidebar onEventClick={(e) => handleMarkerClick(e, 'event')} />
                                 ) : (
-                                    <ResultsPanel churches={churches} events={events} loading={loading || dataState.fetching}
+                                    <ResultsPanel
                                         onChurchClick={(c) => handleMarkerClick(c, 'church')}
                                         onEventClick={(e) => handleMarkerClick(e, 'event')}
                                         onClose={() => setResultsPanelOpen(false)} open={resultsPanelOpen}
@@ -839,7 +838,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                         ) : viewMode === 'participations' ? (
                             <MyParticipationsSidebar onEventClick={(e) => handleMarkerClick(e, 'event')} />
                         ) : (
-                            <ResultsPanel churches={churches} events={events} loading={loading}
+                            <ResultsPanel
                                 onChurchClick={(c) => handleMarkerClick(c, 'church')}
                                 onEventClick={(e) => handleMarkerClick(e, 'event')}
                                 isGeolocated={!!userLocation} isMobileView={false}
