@@ -169,6 +169,8 @@ router.get('/churches/markers', [
     query('latitude').optional().isFloat({ min: -90, max: 90 }),
     query('longitude').optional().isFloat({ min: -180, max: 180 }),
     query('radius').optional().isInt({ min: 1, max: 1000 }),
+    query('userLat').optional().isFloat({ min: -90, max: 90 }),
+    query('userLng').optional().isFloat({ min: -180, max: 180 }),
     query('denomination_id').optional().isInt(),
     query('limit').optional().isInt({ min: 1, max: 10000 })
 ], async (req, res) => {
@@ -178,6 +180,7 @@ router.get('/churches/markers', [
         const {
             north, south, east, west,
             latitude, longitude, radius = 50,
+            userLat, userLng,
             denomination_id,
             limit = 3000
         } = req.query;
@@ -216,6 +219,16 @@ router.get('/churches/markers', [
 
         const whereClause = whereConditions.join(' AND ');
 
+        // Calcul de distance si userLat/userLng fournis
+        let selectDistance = '';
+        let orderBy = '';
+        if (userLat && userLng) {
+            const userPoint = `POINT(${parseFloat(userLng)} ${parseFloat(userLat)})`;
+            selectDistance = `,
+                ST_Distance_Sphere(c.location, ST_GeomFromText('${userPoint}')) / 1000 as distance_km`;
+            orderBy = 'ORDER BY distance_km ASC';
+        }
+
         // Requête ULTRA-optimisée: colonnes minimales, pas de JOIN inutile
         const sqlQuery = `
             SELECT /*+ INDEX(c idx_church_geo) */
@@ -223,9 +236,11 @@ router.get('/churches/markers', [
                 c.church_name,
                 ST_X(c.location) as longitude,
                 ST_Y(c.location) as latitude
+                ${selectDistance}
             FROM churches c
             INNER JOIN admins a ON a.id = c.admin_id
             WHERE ${whereClause}
+            ${orderBy}
             LIMIT ?
         `;
 
@@ -489,6 +504,8 @@ router.get('/events/markers', [
     query('latitude').optional().isFloat({ min: -90, max: 90 }),
     query('longitude').optional().isFloat({ min: -180, max: 180 }),
     query('radius').optional().isInt({ min: 1, max: 1000 }),
+    query('userLat').optional().isFloat({ min: -90, max: 90 }),
+    query('userLng').optional().isFloat({ min: -180, max: 180 }),
     query('limit').optional().isInt({ min: 1, max: 10000 })
 ], async (req, res) => {
     const startTime = Date.now();
@@ -497,6 +514,7 @@ router.get('/events/markers', [
         const {
             north, south, east, west,
             latitude, longitude, radius = 50,
+            userLat, userLng,
             limit = 3000
         } = req.query;
 
@@ -505,8 +523,8 @@ router.get('/events/markers', [
 
         let whereConditions = [
             'COALESCE(e.end_datetime, e.start_datetime) >= NOW()',
-            'a.status = "VALIDATED"',
-            'e.cancelled_at IS NULL'
+            'a.status = "VALIDATED"'
+            // Note: Les événements annulés sont maintenant inclus pour affichage avec statut
         ];
 
         let params = [];
@@ -528,18 +546,36 @@ router.get('/events/markers', [
 
         const whereClause = whereConditions.join(' AND ');
 
+        // Calcul de distance si userLat/userLng fournis
+        let selectDistance = '';
+        let orderBy = '';
+        if (userLat && userLng) {
+            const userPoint = `POINT(${parseFloat(userLng)} ${parseFloat(userLat)})`;
+            selectDistance = `,
+                ST_Distance_Sphere(
+                    COALESCE(e.event_location, c.location),
+                    ST_GeomFromText('${userPoint}')
+                ) / 1000 as distance_km`;
+            orderBy = 'ORDER BY distance_km ASC';
+        }
+
         // Requête ULTRA-optimisée
         const sqlQuery = `
             SELECT /*+ INDEX(e idx_evt_geo) */
                 e.id,
                 e.title,
                 e.start_datetime,
+                e.end_datetime,
+                e.cancelled_at,
+                e.cancellation_reason,
                 ST_X(COALESCE(e.event_location, c.location)) as longitude,
                 ST_Y(COALESCE(e.event_location, c.location)) as latitude
+                ${selectDistance}
             FROM events e
             INNER JOIN admins a ON a.id = e.admin_id
             LEFT JOIN churches c ON c.id = e.church_id
             WHERE ${whereClause}
+            ${orderBy}
             LIMIT ?
         `;
 
