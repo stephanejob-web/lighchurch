@@ -683,11 +683,10 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
     }, []);
 
     const handleRecenter = useCallback(() => {
-        if (userLocation) {
-            setMapCenter([userLocation.latitude, userLocation.longitude]);
-            setMapZoom(13);
+        if (userLocation && mapInstance) {
+            mapInstance.flyTo([userLocation.latitude, userLocation.longitude], 13, { duration: 0.5 });
         }
-    }, [userLocation]);
+    }, [userLocation, mapInstance]);
 
     return (
         <React.Fragment>
@@ -793,11 +792,11 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
             </MapContainer>
 
             <Box sx={{ position: 'absolute', bottom: 24, right: 24, display: 'flex', alignItems: 'flex-end', gap: 1.5, zIndex: 1000 }}>
-                {/* 1. Layer Switcher (Sitting to the left) */}
+                {/* 1. Layer Switcher (Sitting to the left) - Google Maps style with real map thumbnails */}
                 <Box
                     onClick={() => setMapType(mapType === 'satellite' ? 'standard' : 'satellite')}
                     sx={{
-                        width: 64, // Standard GMaps size for large toggle
+                        width: 64,
                         height: 64,
                         borderRadius: 2,
                         cursor: 'pointer',
@@ -810,19 +809,14 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                             boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
                             transform: 'scale(1.02)'
                         },
-                        background: mapType === 'satellite' 
-                            ? 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)' 
-                            : 'linear-gradient(135deg, #1a237e 0%, #2e7d32 100%)'
+                        // Show the alternative map type as preview
+                        backgroundImage: mapType === 'satellite'
+                            ? 'url(https://tile.openstreetmap.org/10/525/367.png)' // Plan preview (Paris area)
+                            : 'url(https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/10/367/525)', // Satellite preview
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center'
                     }}
                 >
-                    {mapType === 'satellite' && (
-                        <Box sx={{
-                            position: 'absolute', inset: 0, opacity: 0.3,
-                            backgroundImage: 'linear-gradient(#ccc 1px, transparent 1px), linear-gradient(90deg, #ccc 1px, transparent 1px)',
-                            backgroundSize: '10px 10px'
-                        }} />
-                    )}
-                    
                     <Box sx={{
                         position: 'absolute', bottom: 0, left: 0, right: 0,
                         bgcolor: 'rgba(0,0,0,0.6)', color: 'white',
