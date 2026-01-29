@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
     Box,
     useMediaQuery,
@@ -41,23 +41,21 @@ L.Icon.Default.mergeOptions({
 });
 
 // ============================================================================
-// OPTIMIZED CANVAS LAYER - Overlay Pane Strategy
+// OPTIMIZED CANVAS LAYER - Combined Clusters
 // ============================================================================
 interface CanvasLayerProps {
-    churchClusters: any[];
-    eventClusters: any[];
+    clusters: any[];
     selectedId: number | null;
     selectedType: 'church' | 'event' | null;
     showChurches: boolean;
     showEvents: boolean;
     participations: Set<number>;
     onMarkerClick: (item: any, type: 'church' | 'event') => void;
-    onClusterClick: (clusterId: number, type: 'church' | 'event', lat: number, lng: number, expansionZoom: number) => void;
+    onClusterClick: (clusterId: number, lat: number, lng: number) => void;
 }
 
 const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
-    churchClusters,
-    eventClusters,
+    clusters,
     selectedId,
     selectedType,
     showChurches,
@@ -69,10 +67,8 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
     const map = useMap();
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const spritesRef = useRef<Record<string, HTMLCanvasElement>>({});
-    
-    // Store hit areas with their specific canvas offset
-    const hitAreasRef = useRef<Array<{ x: number, y: number, r: number, type: 'church' | 'event', isCluster: boolean, data: any }>>([]);
-    const canvasOffsetRef = useRef<{ x: number, y: number }>({ x: 0, y: 0 });
+
+    const hitAreasRef = useRef<Array<{ x: number, y: number, r: number, type: 'church' | 'event' | 'mixed', isCluster: boolean, data: any }>>([]);
 
     // Initialize sprites once
     const initSprites = useCallback(() => {
@@ -116,29 +112,18 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
         if (!canvas) return;
 
         const bounds = map.getBounds();
-        
-        // Calculate the bounding box for the canvas in Layer Points (relative to the pane)
         const topLeft = map.latLngToLayerPoint(bounds.getNorthWest());
         const size = map.getSize();
-        
-        // Add padding (buffer) to ensure smooth panning without edges visible
-        // We render a canvas 2x the size of the viewport centered on the current view
         const padding = { x: size.x * 0.5, y: size.y * 0.5 };
-        
-        // Offset the canvas top-left position
         const offset = {
             x: Math.round(topLeft.x - padding.x),
             y: Math.round(topLeft.y - padding.y)
         };
-
-        // Total canvas size
         const width = size.x + padding.x * 2;
         const height = size.y + padding.y * 2;
 
-        // Position the canvas element within the leaflet pane
         L.DomUtil.setPosition(canvas, L.point(offset.x, offset.y));
-        
-        // Update canvas dimensions if needed (clears content automatically)
+
         if (canvas.width !== width || canvas.height !== height) {
             canvas.width = width;
             canvas.height = height;
@@ -147,98 +132,127 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
             ctx?.clearRect(0, 0, width, height);
         }
 
-        canvasOffsetRef.current = offset;
         hitAreasRef.current.length = 0;
-
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
         const sprites = spritesRef.current;
+        const PI2 = Math.PI * 2;
 
-        const renderItems = (items: any[], type: 'church' | 'event') => {
-            if (!items) return;
-            
-            // Re-usable point for transformation optimization
-            // We use latLngToLayerPoint to get coordinates relative to the map pane "origin"
-            
-            for (let i = 0; i < items.length; i++) {
-                const item = items[i];
-                if (!item.geometry) continue;
+        for (let i = 0; i < clusters.length; i++) {
+            const item = clusters[i];
+            if (!item.geometry) continue;
 
-                const [lng, lat] = item.geometry.coordinates;
-                const point = map.latLngToLayerPoint([lat, lng]);
+            const [lng, lat] = item.geometry.coordinates;
+            const point = map.latLngToLayerPoint([lat, lng]);
+            const x = Math.round(point.x - offset.x);
+            const y = Math.round(point.y - offset.y);
 
-                // Convert LayerPoint (global pane px) to Canvas Local Point
-                const x = Math.round(point.x - offset.x);
-                const y = Math.round(point.y - offset.y);
+            if (x < -30 || x > width + 30 || y < -30 || y > height + 30) continue;
 
-                // Culling: check if point is inside the buffered canvas
-                if (x < -20 || x > width + 20 || y < -20 || y > height + 20) continue;
+            const isCluster = item.properties.cluster;
 
-                const isCluster = item.properties.cluster;
-                if (isCluster) {
-                    const count = item.properties.point_count;
-                    const r = Math.min(28, 14 + Math.log10(count) * 8);
-                    
+            if (isCluster) {
+                const churchCount = item.properties.churchCount || 0;
+                const eventCount = item.properties.eventCount || 0;
+                const total = churchCount + eventCount;
+
+                // Filtrage selon les options d'affichage
+                const visibleCount = (showChurches ? churchCount : 0) + (showEvents ? eventCount : 0);
+                if (visibleCount === 0) continue;
+
+                const r = Math.min(28, 14 + Math.log10(total) * 8);
+
+                // Dessiner le cluster bi-colore (camembert)
+                if (churchCount > 0 && eventCount > 0 && showChurches && showEvents) {
+                    // Cluster mixte : dessiner deux arcs proportionnels
+                    const churchRatio = churchCount / total;
+                    const churchAngle = churchRatio * PI2;
+
+                    // Arc bleu (églises) - commence en haut (-PI/2)
                     ctx.beginPath();
-                    ctx.arc(x, y, r, 0, 6.283);
-                    ctx.fillStyle = type === 'church' ? '#4285F4' : '#EA4335';
+                    ctx.moveTo(x, y);
+                    ctx.arc(x, y, r, -Math.PI / 2, -Math.PI / 2 + churchAngle);
+                    ctx.closePath();
+                    ctx.fillStyle = '#4285F4';
                     ctx.fill();
-                    ctx.strokeStyle = '#fff';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
 
-                    ctx.fillStyle = '#fff';
-                    ctx.font = 'bold 11px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(count >= 1000 ? Math.round(count/1000) + 'k' : String(count), x, y);
-                    
-                    // Hit area stores CANVAS LOCAL coordinates
-                    hitAreasRef.current.push({ x, y, r, type, isCluster: true, data: item });
+                    // Arc rouge (événements)
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.arc(x, y, r, -Math.PI / 2 + churchAngle, -Math.PI / 2 + PI2);
+                    ctx.closePath();
+                    ctx.fillStyle = '#EA4335';
+                    ctx.fill();
                 } else {
-                    const innerItem = item.properties.item;
-                    const isSelected = selectedType === type && selectedId === innerItem?.id;
-                    const isParticipating = type === 'event' && innerItem && participations.has(innerItem.id);
-                    
-                    const sprite = isSelected ? (type === 'church' ? sprites.churchSelected : sprites.eventSelected) :
-                                 (isParticipating ? sprites.eventParticipating : (type === 'church' ? sprites.church : sprites.event));
-
-                    if (sprite) {
-                        const sSize = sprite.width;
-                        const drawOffset = sSize / 2;
-                        ctx.drawImage(sprite, x - drawOffset, y - drawOffset);
+                    // Cluster mono-couleur
+                    ctx.beginPath();
+                    ctx.arc(x, y, r, 0, PI2);
+                    if (showChurches && churchCount > 0) {
+                        ctx.fillStyle = '#4285F4';
+                    } else {
+                        ctx.fillStyle = '#EA4335';
                     }
-                    
-                    hitAreasRef.current.push({ x, y, r: isSelected ? 14 : 10, type, isCluster: false, data: innerItem });
+                    ctx.fill();
                 }
+
+                // Bordure blanche
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, PI2);
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Texte du compteur
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 11px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(visibleCount >= 1000 ? Math.round(visibleCount/1000) + 'k' : String(visibleCount), x, y);
+
+                hitAreasRef.current.push({ x, y, r, type: 'mixed', isCluster: true, data: item });
+            } else {
+                // Marqueur individuel
+                const itemType = item.properties.itemType as 'church' | 'event';
+                const innerItem = item.properties.item;
+
+                // Filtrage selon les options d'affichage
+                if (itemType === 'church' && !showChurches) continue;
+                if (itemType === 'event' && !showEvents) continue;
+
+                const isSelected = selectedType === itemType && selectedId === innerItem?.id;
+                const isParticipating = itemType === 'event' && innerItem && participations.has(innerItem.id);
+
+                const sprite = isSelected
+                    ? (itemType === 'church' ? sprites.churchSelected : sprites.eventSelected)
+                    : (isParticipating ? sprites.eventParticipating : (itemType === 'church' ? sprites.church : sprites.event));
+
+                if (sprite) {
+                    const drawOffset = sprite.width / 2;
+                    ctx.drawImage(sprite, x - drawOffset, y - drawOffset);
+                }
+
+                hitAreasRef.current.push({ x, y, r: isSelected ? 14 : 10, type: itemType, isCluster: false, data: innerItem });
             }
-        };
-
-        if (showChurches) renderItems(churchClusters, 'church');
-        if (showEvents) renderItems(eventClusters, 'event');
-
-    }, [map, churchClusters, eventClusters, showChurches, showEvents, selectedId, selectedType, participations]);
+        }
+    }, [map, clusters, showChurches, showEvents, selectedId, selectedType, participations]);
 
     const handleCanvasClick = useCallback((e: MouseEvent) => {
-        // e.offsetX/Y gives coordinates relative to the target element (canvas)
         const mx = e.offsetX;
         const my = e.offsetY;
 
         const hits = hitAreasRef.current;
-        // Check hits in reverse order (topmost first)
         for (let i = hits.length - 1; i >= 0; i--) {
             const hit = hits[i];
             const dx = mx - hit.x;
             const dy = my - hit.y;
-            
+
             if (dx * dx + dy * dy <= (hit.r + 5) * (hit.r + 5)) {
-                // Stop propagation? Probably not needed for canvas, but good practice
                 if (hit.isCluster) {
                     const [lng, lat] = hit.data.geometry.coordinates;
-                    onClusterClick(hit.data.properties.cluster_id, hit.type, lat, lng, 0);
+                    onClusterClick(hit.data.properties.cluster_id, lat, lng);
                 } else if (hit.data) {
-                    onMarkerClick(hit.data, hit.type);
+                    onMarkerClick(hit.data, hit.type as 'church' | 'event');
                 }
                 return;
             }
@@ -247,26 +261,21 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
 
     useEffect(() => {
         initSprites();
-        
+
         const canvas = document.createElement('canvas');
-        canvas.className = 'leaflet-zoom-animated'; // Critical for smooth zoom animation
+        canvas.className = 'leaflet-zoom-animated';
         canvas.style.zIndex = '450';
-        canvas.style.pointerEvents = 'auto'; // allow clicks
-        
-        // Attach to overlay pane so it moves with the map (hardware accelerated CSS)
+        canvas.style.pointerEvents = 'auto';
+
         map.getPanes().overlayPane.appendChild(canvas);
         canvasRef.current = canvas;
-
-        // Native click listener on canvas
         canvas.addEventListener('click', handleCanvasClick);
 
         const onMoveEnd = () => draw();
         const onZoomEnd = () => draw();
-        
-        // We only listen to "end" events because CSS handles the "during" phase!
+
         map.on('moveend', onMoveEnd);
         map.on('zoomend', onZoomEnd);
-        // Force initial draw
         draw();
 
         return () => {
@@ -541,6 +550,9 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                             cluster: c.count > 1,
                             cluster_id: c.id,
                             point_count: c.count,
+                            // Compteurs pour le rendu bi-colore
+                            churchCount: type === 'church' ? c.count : 0,
+                            eventCount: type === 'event' ? c.count : 0,
                             item: c.count === 1 ? { id: c.sampleId, church_name: c.sampleName, title: c.sampleName, latitude: c.lat, longitude: c.lng } : null,
                             itemType: type
                         }
@@ -585,19 +597,87 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
         };
     }, [currentBounds, currentZoom]);
 
-    // ========== CLIENT-SIDE CLUSTERING ==========
-    const { churchClusters, eventClusters, getClusterExpansionZoom } = useSupercluster(
-        showChurches ? dataState.churches : [],
-        showEvents ? dataState.events : [],
+    // ========== CLIENT-SIDE CLUSTERING (COMBINED) ==========
+    const { clusters, getClusterExpansionZoom } = useSupercluster(
+        dataState.churches,
+        dataState.events,
         currentBounds,
         currentZoom,
         { radius: 60, maxZoom: 17 }
     );
 
-    // High Zoom: Use Client Clusters; Low Zoom: Use Server Clusters
-    // Progressive: during fetch, keep showing previous state if available
-    const finalChurchClusters = currentZoom >= 10 ? churchClusters : dataState.serverClusters.churchClusters;
-    const finalEventClusters = currentZoom >= 10 ? eventClusters : dataState.serverClusters.eventClusters;
+    // High Zoom: Use Client Clusters; Low Zoom: Merge Server Clusters
+    const finalClusters = useMemo(() => {
+        if (currentZoom >= 10) return clusters;
+
+        // Fusionner les clusters serveur proches pour créer des clusters bi-colores
+        const churchClusters = dataState.serverClusters.churchClusters;
+        const eventClusters = dataState.serverClusters.eventClusters;
+
+        if (churchClusters.length === 0) return eventClusters;
+        if (eventClusters.length === 0) return churchClusters;
+
+        // Seuil de distance pour fusionner (en degrés, ~50km à l'équateur)
+        const mergeThreshold = 0.5;
+
+        const merged: any[] = [];
+        const usedEventIndices = new Set<number>();
+
+        // Pour chaque cluster d'église, chercher un cluster d'événement proche
+        for (const church of churchClusters) {
+            const [cLng, cLat] = church.geometry.coordinates;
+            let foundMatch = false;
+
+            for (let i = 0; i < eventClusters.length; i++) {
+                if (usedEventIndices.has(i)) continue;
+
+                const event = eventClusters[i];
+                const [eLng, eLat] = event.geometry.coordinates;
+
+                const dist = Math.sqrt((cLng - eLng) ** 2 + (cLat - eLat) ** 2);
+
+                if (dist < mergeThreshold) {
+                    // Fusionner les deux clusters
+                    const totalChurches = church.properties.churchCount || 0;
+                    const totalEvents = event.properties.eventCount || 0;
+
+                    merged.push({
+                        type: 'Feature',
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [(cLng + eLng) / 2, (cLat + eLat) / 2] // Point médian
+                        },
+                        properties: {
+                            cluster: true,
+                            cluster_id: `merged_${church.properties.cluster_id}_${event.properties.cluster_id}`,
+                            point_count: totalChurches + totalEvents,
+                            churchCount: totalChurches,
+                            eventCount: totalEvents,
+                            item: null,
+                            itemType: 'mixed'
+                        }
+                    });
+
+                    usedEventIndices.add(i);
+                    foundMatch = true;
+                    break;
+                }
+            }
+
+            if (!foundMatch) {
+                merged.push(church);
+            }
+        }
+
+        // Ajouter les clusters d'événements non fusionnés
+        for (let i = 0; i < eventClusters.length; i++) {
+            if (!usedEventIndices.has(i)) {
+                merged.push(eventClusters[i]);
+            }
+        }
+
+        return merged;
+    }, [currentZoom, clusters, dataState.serverClusters.churchClusters, dataState.serverClusters.eventClusters]);
 
     // Final values for components
     const churches = dataState.churches;
@@ -664,13 +744,13 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
         }
     }, []);
 
-    const handleClusterClick = useCallback((clusterId: any, type: 'church' | 'event', lat: number, lng: number) => {
+    const handleClusterClick = useCallback((clusterId: number, lat: number, lng: number) => {
         if (currentZoom < 10) {
             // High-level zoom steps for server clusters
             setMapCenter([lat, lng]);
             setMapZoom(currentZoom + 2);
         } else {
-            const expansionZoom = getClusterExpansionZoom(clusterId, type);
+            const expansionZoom = getClusterExpansionZoom(clusterId);
             setMapCenter([lat, lng]);
             setMapZoom(Math.min(expansionZoom + 1, 18));
         }
@@ -785,8 +865,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                 {userLocation && <UserMarker position={[userLocation.latitude, userLocation.longitude]} />}
 
                 <CanvasLayer
-                    churchClusters={finalChurchClusters}
-                    eventClusters={finalEventClusters}
+                    clusters={finalClusters}
                     selectedId={selectedItem?.id || null}
                     selectedType={selectedType}
                     showChurches={showChurches}
