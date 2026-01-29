@@ -30,6 +30,7 @@ interface FetchChurchesParams {
     denominationId?: number;
     search?: string;
     limit?: number;
+    offset?: number;
 }
 
 interface FetchEventsParams {
@@ -48,6 +49,7 @@ interface FetchEventsParams {
     // Autres filtres
     search?: string;
     limit?: number;
+    offset?: number;
 }
 
 /**
@@ -190,6 +192,94 @@ export const fetchChurchesAndEventsMarkers = async (
         return { churches, events };
     } catch (error: any) {
         console.error('Error fetching markers:', error);
+        throw error;
+    }
+};
+
+/**
+ * Interface pour les résultats paginés
+ */
+export interface PaginatedResult<T> {
+    data: T[];
+    hasMore: boolean;
+    total?: number;
+}
+
+/**
+ * Récupère les églises de manière paginée pour le ResultsPanel
+ * @returns Les églises avec indication s'il y en a plus
+ */
+export const fetchChurchesPaginated = async (
+    params: FetchChurchesParams
+): Promise<PaginatedResult<Church>> => {
+    try {
+        const limit = params.limit || 20;
+        const { data } = await api.get<ApiResponse<Church[]> & { total?: number }>('/public/churches/markers', {
+            params: {
+                north: params.north,
+                south: params.south,
+                east: params.east,
+                west: params.west,
+                latitude: params.latitude,
+                longitude: params.longitude,
+                radius: params.radius || 50,
+                denomination_id: params.denominationId,
+                search: params.search,
+                limit: limit,
+                offset: params.offset || 0
+            }
+        });
+
+        if (!data.success || !data.churches) {
+            throw new Error(data.message || 'Erreur lors du chargement des églises');
+        }
+
+        return {
+            data: data.churches,
+            hasMore: data.churches.length === limit,
+            total: data.total
+        };
+    } catch (error: any) {
+        console.error('Error fetching churches paginated:', error);
+        throw error;
+    }
+};
+
+/**
+ * Récupère les événements de manière paginée pour le ResultsPanel
+ * @returns Les événements avec indication s'il y en a plus
+ */
+export const fetchEventsPaginated = async (
+    params: FetchEventsParams
+): Promise<PaginatedResult<Event>> => {
+    try {
+        const limit = params.limit || 20;
+        const { data } = await api.get<ApiResponse<Event[]> & { total?: number }>('/public/events/markers', {
+            params: {
+                north: params.north,
+                south: params.south,
+                east: params.east,
+                west: params.west,
+                latitude: params.latitude,
+                longitude: params.longitude,
+                radius: params.radius || 50,
+                search: params.search,
+                limit: limit,
+                offset: params.offset || 0
+            }
+        });
+
+        if (!data.success || !data.events) {
+            throw new Error(data.message || 'Erreur lors du chargement des événements');
+        }
+
+        return {
+            data: data.events,
+            hasMore: data.events.length === limit,
+            total: data.total
+        };
+    } catch (error: any) {
+        console.error('Error fetching events paginated:', error);
         throw error;
     }
 };
