@@ -12,7 +12,6 @@ import {
 } from '@mui/material';
 import {
     MyLocation as MyLocationIcon,
-    Layers,
     Event as EventIcon,
     Home as HomeIcon,
     Add as AddIcon,
@@ -695,10 +694,12 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                     <SearchPanel onSearch={() => {}}
                         onFilterChange={(f) => { setShowChurches(f.churches); setShowEvents(f.events); }}
                         onToggleList={() => setResultsPanelOpen(!resultsPanelOpen)}
-                        onLocationSelect={handleLocationSelect} hideFilters />
+                        onLocationSelect={handleLocationSelect} 
+                        // Filters are now shown by default (removed hideFilters)
+                     />
 
                     {(resultsPanelOpen || viewMode === 'participations') && !detailDrawerOpen && (
-                        <Box sx={{ position: 'absolute', top: 70, left: 16, bottom: 24, width: 'calc(100% - 32px)', zIndex: 900, pointerEvents: 'none' }}>
+                        <Box sx={{ position: 'absolute', top: 120, left: 16, bottom: 24, width: 'calc(100% - 32px)', zIndex: 900, pointerEvents: 'none' }}>
                             <Box sx={{ height: '100%', pointerEvents: 'auto', borderRadius: 2, overflow: 'hidden', boxShadow: 3 }}>
                                 {viewMode === 'participations' ? (
                                     <MyParticipationsSidebar onEventClick={(e) => handleMarkerClick(e, 'event')} />
@@ -775,22 +776,6 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                 />
             </MapContainer>
 
-            <Paper elevation={2} sx={{
-                position: 'absolute', bottom: isMobile ? 80 : 24, left: isMobile ? 24 : 464,
-                zIndex: 1000, p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.95)'
-            }}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box sx={{ width: 14, height: 14, borderRadius: '50%', bgcolor: '#4285F4' }} />
-                        <Box sx={{ fontSize: 12 }}>Églises {currentZoom >= 10 ? `(${churches.length})` : '(Vue globale)'}</Box>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box sx={{ width: 14, height: 14, borderRadius: '50%', bgcolor: '#EA4335' }} />
-                        <Box sx={{ fontSize: 12 }}>Événements {currentZoom >= 10 ? `(${events.length})` : '(Vue globale)'}</Box>
-                    </Box>
-                </Box>
-            </Paper>
-
             <Box sx={{ position: 'absolute', bottom: 24, right: 24, display: 'flex', flexDirection: 'column', gap: 2, zIndex: 1000 }}>
                 <Tooltip title="Accueil" placement="left">
                     <Paper elevation={2} sx={{ bgcolor: 'white', borderRadius: 2, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
@@ -808,12 +793,53 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                     </Paper>
                 </Tooltip>
 
-                <Tooltip title={mapType === 'satellite' ? 'Vue carte' : 'Vue satellite'} placement="left">
-                    <Paper elevation={2} sx={{ bgcolor: 'white', borderRadius: 2, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                        onClick={() => setMapType(t => t === 'satellite' ? 'standard' : 'satellite')}>
-                        <Layers sx={{ color: '#666' }} />
-                    </Paper>
-                </Tooltip>
+                {/* Google Maps Style Layer Switcher */}
+                <Box
+                    onClick={() => setMapType(mapType === 'satellite' ? 'standard' : 'satellite')}
+                    sx={{
+                        width: 56,
+                        height: 56,
+                        borderRadius: 2,
+                        cursor: 'pointer',
+                        border: '2px solid #FFFFFF',
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+                        overflow: 'hidden',
+                        position: 'relative',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                            boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
+                        },
+                        // Background mimics the "target" view
+                        background: mapType === 'satellite' 
+                            ? 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)' // Standard view preview
+                            : 'linear-gradient(135deg, #1a237e 0%, #2e7d32 100%)' // Satellite view preview
+                    }}
+                >
+                    {/* Visual details for "Standard" preview (Grid lines) */}
+                    {mapType === 'satellite' && (
+                        <Box sx={{
+                            position: 'absolute', inset: 0, opacity: 0.3,
+                            backgroundImage: 'linear-gradient(#ccc 1px, transparent 1px), linear-gradient(90deg, #ccc 1px, transparent 1px)',
+                            backgroundSize: '10px 10px'
+                        }} />
+                    )}
+                    
+                    {/* Label */}
+                    <Box sx={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        bgcolor: 'rgba(0,0,0,0.5)',
+                        color: 'white',
+                        fontSize: '0.65rem',
+                        textAlign: 'center',
+                        py: 0.5,
+                        backdropFilter: 'blur(2px)'
+                    }}>
+                        {mapType === 'satellite' ? 'Plan' : 'Satellite'}
+                    </Box>
+                </Box>
 
                 {userLocation && (
                     <Tooltip title="Ma position" placement="left">

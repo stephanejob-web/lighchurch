@@ -213,19 +213,36 @@ const SearchPanel: React.FC<SearchPanelProps & { embedded?: boolean }> = ({ onSe
                Let's keep them here but style them fittingly.
             */}
             {!embedded && !hideFilters && (
-                <Stack direction="row" spacing={1}>
+                <Stack 
+                    direction="row" 
+                    spacing={1}
+                    sx={{
+                        mt: 0.5,
+                        overflowX: 'auto',
+                        pb: 0.5, // Space for scrollbar if any (though hidden)
+                        px: 0.5, // Padding for box shadow visibility
+                        // Hide scrollbar
+                        '&::-webkit-scrollbar': { display: 'none' },
+                        scrollbarWidth: 'none',
+                        '-ms-overflow-style': 'none',
+                        width: '100%',
+                        flexShrink: 0
+                    }}
+                >
                     <Chip
                         icon={<Church />}
                         label="Églises"
                         clickable
                         color={showChurches ? 'primary' : 'default'}
-                        variant={showChurches ? 'filled' : 'filled'}
+                        variant={showChurches ? 'filled' : 'outlined'}
                         onClick={handleToggleChurches}
                         sx={{
                             backgroundColor: showChurches ? '#4285F4' : '#FFFFFF',
                             color: showChurches ? '#FFFFFF' : '#3C4043',
                             fontWeight: 500,
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
+                            borderColor: showChurches ? 'transparent' : '#DADCE0',
+                            boxShadow: '0 1px 2px rgba(60,64,67,0.3)',
+                            flexShrink: 0,
                             '&:hover': {
                                 backgroundColor: showChurches ? '#3367D6' : '#F8F9FA',
                             }
@@ -236,12 +253,15 @@ const SearchPanel: React.FC<SearchPanelProps & { embedded?: boolean }> = ({ onSe
                         label="Événements"
                         clickable
                         color={showEvents ? 'secondary' : 'default'}
+                        variant={showEvents ? 'filled' : 'outlined'}
                         onClick={handleToggleEvents}
                         sx={{
                             backgroundColor: showEvents ? '#EA4335' : '#FFFFFF',
                             color: showEvents ? '#FFFFFF' : '#3C4043',
                             fontWeight: 500,
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
+                            borderColor: showEvents ? 'transparent' : '#DADCE0',
+                            boxShadow: '0 1px 2px rgba(60,64,67,0.3)',
+                            flexShrink: 0,
                             '&:hover': {
                                 backgroundColor: showEvents ? '#C5221F' : '#F8F9FA',
                             }
