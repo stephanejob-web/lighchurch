@@ -68,6 +68,8 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
     const map = useMap();
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const spritesRef = useRef<Record<string, HTMLCanvasElement>>({});
+    const animationRef = useRef<number | null>(null);
+    const pulseRef = useRef<number>(0);
 
     const hitAreasRef = useRef<Array<{ x: number, y: number, r: number, type: 'church' | 'event' | 'mixed', isCluster: boolean, data: any }>>([]);
 
@@ -75,40 +77,65 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
     const initSprites = useCallback(() => {
         const createMarkerSprite = (color: string, iconType: 'cross' | 'calendar', r: number, selected = false) => {
             const c = document.createElement('canvas');
-            const size = Math.ceil((r + 4) * 2);
+            // Plus d'espace pour le marqueur sélectionné (pour le glow)
+            const padding = selected ? 20 : 4;
+            const size = Math.ceil((r + padding) * 2);
             c.width = size; c.height = size;
             const ctx = c.getContext('2d')!;
             const center = size / 2;
 
+            if (selected) {
+                // Ombre portée pour le marqueur sélectionné
+                ctx.shadowColor = 'rgba(0,0,0,0.4)';
+                ctx.shadowBlur = 8;
+                ctx.shadowOffsetY = 3;
+            }
+
             ctx.beginPath();
             ctx.arc(center, center, r, 0, 6.283);
-            ctx.fillStyle = selected ? '#FBBC04' : color;
+            ctx.fillStyle = color; // Garder la couleur d'origine pour le marqueur
             ctx.fill();
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 2;
+
+            // Bordure plus épaisse et contrastée pour le sélectionné
+            ctx.strokeStyle = selected ? '#FFFFFF' : '#fff';
+            ctx.lineWidth = selected ? 3 : 2;
             ctx.stroke();
 
-            ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
+            // Réinitialiser l'ombre pour les icônes
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = selected ? 2 : 1.5;
             if (iconType === 'cross') {
-                ctx.beginPath(); ctx.moveTo(center, center - 4); ctx.lineTo(center, center + 4);
-                ctx.moveTo(center - 3, center - 1); ctx.lineTo(center + 3, center - 1); ctx.stroke();
+                const iconScale = selected ? 1.3 : 1;
+                ctx.beginPath();
+                ctx.moveTo(center, center - 4 * iconScale);
+                ctx.lineTo(center, center + 4 * iconScale);
+                ctx.moveTo(center - 3 * iconScale, center - 1 * iconScale);
+                ctx.lineTo(center + 3 * iconScale, center - 1 * iconScale);
+                ctx.stroke();
             } else {
-                ctx.strokeRect(center - 4, center - 3, 8, 7);
-                ctx.beginPath(); ctx.moveTo(center - 4, center - 1); ctx.lineTo(center + 4, center - 1); ctx.stroke();
+                const iconScale = selected ? 1.3 : 1;
+                ctx.strokeRect(center - 4 * iconScale, center - 3 * iconScale, 8 * iconScale, 7 * iconScale);
+                ctx.beginPath();
+                ctx.moveTo(center - 4 * iconScale, center - 1 * iconScale);
+                ctx.lineTo(center + 4 * iconScale, center - 1 * iconScale);
+                ctx.stroke();
             }
             return c;
         };
 
         spritesRef.current = {
             church: createMarkerSprite('#4285F4', 'cross', 10),
-            churchSelected: createMarkerSprite('#4285F4', 'cross', 14, true),
+            churchSelected: createMarkerSprite('#4285F4', 'cross', 16, true),
             event: createMarkerSprite('#EA4335', 'calendar', 10),
-            eventSelected: createMarkerSprite('#EA4335', 'calendar', 14, true),
+            eventSelected: createMarkerSprite('#EA4335', 'calendar', 16, true),
             eventParticipating: createMarkerSprite('#34A853', 'calendar', 10)
         };
     }, []);
 
-    const draw = useCallback(() => {
+    const draw = useCallback((pulse: number = 0) => {
         const canvas = canvasRef.current;
         if (!canvas) return;
 
@@ -139,6 +166,9 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
 
         const sprites = spritesRef.current;
         const PI2 = Math.PI * 2;
+
+        // Stocker le marqueur sélectionné pour le dessiner en dernier
+        let selectedMarkerData: { x: number; y: number; sprite: HTMLCanvasElement; itemType: 'church' | 'event'; innerItem: any } | null = null;
 
         for (let i = 0; i < clusters.length; i++) {
             const item = clusters[i];
@@ -224,17 +254,63 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
                 const isSelected = selectedType === itemType && selectedId === innerItem?.id;
                 const isParticipating = itemType === 'event' && innerItem && participations.has(innerItem.id);
 
-                const sprite = isSelected
-                    ? (itemType === 'church' ? sprites.churchSelected : sprites.eventSelected)
-                    : (isParticipating ? sprites.eventParticipating : (itemType === 'church' ? sprites.church : sprites.event));
+                // Si sélectionné, sauvegarder pour dessiner en dernier
+                if (isSelected) {
+                    const sprite = itemType === 'church' ? sprites.churchSelected : sprites.eventSelected;
+                    if (sprite) {
+                        selectedMarkerData = { x, y, sprite, itemType, innerItem };
+                    }
+                    hitAreasRef.current.push({ x, y, r: 18, type: itemType, isCluster: false, data: innerItem });
+                    continue; // Ne pas dessiner maintenant
+                }
+
+                const sprite = isParticipating
+                    ? sprites.eventParticipating
+                    : (itemType === 'church' ? sprites.church : sprites.event);
 
                 if (sprite) {
                     const drawOffset = sprite.width / 2;
                     ctx.drawImage(sprite, x - drawOffset, y - drawOffset);
                 }
 
-                hitAreasRef.current.push({ x, y, r: isSelected ? 14 : 10, type: itemType, isCluster: false, data: innerItem });
+                hitAreasRef.current.push({ x, y, r: 10, type: itemType, isCluster: false, data: innerItem });
             }
+        }
+
+        // Dessiner le marqueur sélectionné en dernier (au-dessus de tout)
+        if (selectedMarkerData) {
+            const { x, y, sprite, itemType } = selectedMarkerData;
+
+            // Effet de halo pulsant
+            const pulseScale = 0.5 + Math.sin(pulse * 0.05) * 0.5; // Oscillation entre 0 et 1
+            const maxRingRadius = 35;
+            const minRingRadius = 20;
+            const ringRadius = minRingRadius + (maxRingRadius - minRingRadius) * pulseScale;
+            const ringAlpha = 0.6 - pulseScale * 0.4; // Plus opaque quand petit, plus transparent quand grand
+
+            // Couleur du halo selon le type
+            const ringColor = itemType === 'church' ? '66, 133, 244' : '234, 67, 53'; // RGB
+
+            // Dessiner le halo pulsant
+            ctx.beginPath();
+            ctx.arc(x, y, ringRadius, 0, PI2);
+            ctx.fillStyle = `rgba(${ringColor}, ${ringAlpha * 0.3})`;
+            ctx.fill();
+            ctx.strokeStyle = `rgba(${ringColor}, ${ringAlpha})`;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Deuxième anneau plus petit et plus opaque
+            const innerRingRadius = minRingRadius + (maxRingRadius - minRingRadius) * pulseScale * 0.6;
+            ctx.beginPath();
+            ctx.arc(x, y, innerRingRadius, 0, PI2);
+            ctx.strokeStyle = `rgba(${ringColor}, ${ringAlpha * 1.5})`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Dessiner le marqueur sélectionné
+            const drawOffset = sprite.width / 2;
+            ctx.drawImage(sprite, x - drawOffset, y - drawOffset);
         }
     }, [map, clusters, showChurches, showEvents, selectedId, selectedType, participations]);
 
@@ -272,12 +348,12 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
         canvasRef.current = canvas;
         canvas.addEventListener('click', handleCanvasClick);
 
-        const onMoveEnd = () => draw();
-        const onZoomEnd = () => draw();
+        const onMoveEnd = () => draw(pulseRef.current);
+        const onZoomEnd = () => draw(pulseRef.current);
 
         map.on('moveend', onMoveEnd);
         map.on('zoomend', onZoomEnd);
-        draw();
+        draw(0);
 
         return () => {
             map.off('moveend', onMoveEnd);
@@ -288,6 +364,36 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
             }
         };
     }, [map, draw, handleCanvasClick, initSprites]);
+
+    // Animation loop pour l'effet pulsant du marqueur sélectionné
+    useEffect(() => {
+        if (selectedId === null) {
+            // Pas de marqueur sélectionné, arrêter l'animation
+            if (animationRef.current) {
+                cancelAnimationFrame(animationRef.current);
+                animationRef.current = null;
+            }
+            return;
+        }
+
+        let running = true;
+        const animate = () => {
+            if (!running) return;
+            pulseRef.current += 1;
+            draw(pulseRef.current);
+            animationRef.current = requestAnimationFrame(animate);
+        };
+
+        animate();
+
+        return () => {
+            running = false;
+            if (animationRef.current) {
+                cancelAnimationFrame(animationRef.current);
+                animationRef.current = null;
+            }
+        };
+    }, [selectedId, draw]);
 
     return null;
 });
