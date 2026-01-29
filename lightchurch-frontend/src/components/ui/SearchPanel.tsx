@@ -81,15 +81,15 @@ const SearchPanel: React.FC<SearchPanelProps & { embedded?: boolean }> = ({ onSe
         <Box
             ref={wrapperRef}
             sx={embedded ? {
-                p: 2,
+                px: 2,
+                py: 1.5,
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 1,
                 width: '100%',
-                bgcolor: '#fff',
+                bgcolor: 'transparent',
                 zIndex: 2000,
                 flexShrink: 0,
-                borderBottom: '1px solid #f0f0f0',
                 position: 'relative'
             } : {
                 position: 'absolute',
@@ -114,8 +114,8 @@ const SearchPanel: React.FC<SearchPanelProps & { embedded?: boolean }> = ({ onSe
                     // Google Maps search bar is more rounded. Let's try 8px (2) or 24px (pill) if we want "Google" style. 
                     // But in sidebar it's usually a rectangle with rounded corners.
 
-                    boxShadow: embedded ? 'none' : '0 2px 4px rgba(0,0,0,0.2)',
-                    border: embedded ? '1px solid #dadce0' : 'none',
+                    boxShadow: embedded ? '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)' : '0 2px 4px rgba(0,0,0,0.2)',
+                    border: 'none',
                     position: 'relative',
                     bgcolor: '#fff',
                     transition: 'box-shadow 0.2s',
@@ -208,26 +208,36 @@ const SearchPanel: React.FC<SearchPanelProps & { embedded?: boolean }> = ({ onSe
                 </Paper>
             )}
 
-            {/* Filter Chips - Only show in SearchPanel if NOT embedded and NOT hidden
-               Actually, in Google Maps, filters are often under the search box.
-               Let's keep them here but style them fittingly.
+            {/* Filter Chips - Google Maps Style (Pills)
             */}
-            {!embedded && !hideFilters && (
-                <Stack direction="row" spacing={1}>
+            {!hideFilters && (
+                <Stack 
+                    direction="row" 
+                    spacing={1}
+                    sx={{
+                        mt: 1,
+                        px: embedded ? 0 : 0.5,
+                        pb: 0.5,
+                        width: '100%',
+                        flexWrap: 'wrap',
+                        gap: 1
+                    }}
+                >
                     <Chip
                         icon={<Church />}
                         label="Églises"
                         clickable
-                        color={showChurches ? 'primary' : 'default'}
-                        variant={showChurches ? 'filled' : 'filled'}
                         onClick={handleToggleChurches}
                         sx={{
-                            backgroundColor: showChurches ? '#4285F4' : '#FFFFFF',
-                            color: showChurches ? '#FFFFFF' : '#3C4043',
+                            backgroundColor: showChurches ? '#E8F0FE' : '#FFFFFF',
+                            color: showChurches ? '#1967D2' : '#3C4043',
                             fontWeight: 500,
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
+                            border: `1px solid ${showChurches ? '#E8F0FE' : '#DADCE0'}`,
+                            boxShadow: 'none',
+                            height: 32,
+                            borderRadius: '16px',
                             '&:hover': {
-                                backgroundColor: showChurches ? '#3367D6' : '#F8F9FA',
+                                backgroundColor: showChurches ? '#D2E3FC' : '#F1F3F4',
                             }
                         }}
                     />
@@ -235,15 +245,17 @@ const SearchPanel: React.FC<SearchPanelProps & { embedded?: boolean }> = ({ onSe
                         icon={<CalendarMonth />}
                         label="Événements"
                         clickable
-                        color={showEvents ? 'secondary' : 'default'}
                         onClick={handleToggleEvents}
                         sx={{
-                            backgroundColor: showEvents ? '#EA4335' : '#FFFFFF',
-                            color: showEvents ? '#FFFFFF' : '#3C4043',
+                            backgroundColor: showEvents ? '#FCE8E6' : '#FFFFFF',
+                            color: showEvents ? '#C5221F' : '#3C4043',
                             fontWeight: 500,
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
+                            border: `1px solid ${showEvents ? '#FCE8E6' : '#DADCE0'}`,
+                            boxShadow: 'none',
+                            height: 32,
+                            borderRadius: '16px',
                             '&:hover': {
-                                backgroundColor: showEvents ? '#C5221F' : '#F8F9FA',
+                                backgroundColor: showEvents ? '#FAD2CF' : '#F1F3F4',
                             }
                         }}
                     />

@@ -141,7 +141,7 @@ INSERT INTO churches (id, admin_id, denomination_id, church_name, location) VALU
 
 -- Toulouse (Églises 47-50)
 (47, 7, 3, 'Porte de l''Espoir Toulouse Centre', ST_GeomFromText('POINT(1.4442 43.6047)')),
-(48, 8, 4, 'Source de Vie Toulouse Mirail', ST_GeomFromText('POINT(1.3930 43.5800)')),
+(48, 8, 4, 'Source de Vie Toulouse Mirail', ST_GeomFroTemxt('POINT(1.3930 43.5800)')),
 (49, 9, 1, 'Impact Centre Chrétien Blagnac', ST_GeomFromText('POINT(1.3900 43.6370)')),
 (50, 10, 2, 'ADD Colomiers', ST_GeomFromText('POINT(1.3350 43.6110)'));
 

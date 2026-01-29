@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Drawer, Box, Typography, Button, IconButton, Skeleton, Divider, Chip, Link, Stack, Alert } from '@mui/material';
-import { Close, Directions, PunchClock, Call, Language, LocationOn, LocalParking, Accessible, Mic, Person, People, Euro, YouTube, InsertLink, CancelOutlined, Info, Email, Translate, Facebook, Instagram, Twitter, LinkedIn, WhatsApp, EventBusy, Image as ImageIcon } from '@mui/icons-material';
+import { Close, Directions, PunchClock, Call, Language, LocationOn, LocalParking, Accessible, Mic, Person, People, Euro, YouTube, InsertLink, CancelOutlined, Info, Email, Translate, Facebook, Instagram, Twitter, LinkedIn, WhatsApp, EventBusy } from '@mui/icons-material';
 import type { ChurchDetails, EventDetails } from '../../types/publicMap';
 import useEventInterestWeb from '../../hooks/useEventInterestWeb';
 import TikTokIcon from '../icons/TikTokIcon';
@@ -551,42 +551,63 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
         </Box>
     ) : data ? (
         <Box>
-            {/* Cover Image */}
-            <Box
-                sx={{
-                    height: 200,
-                    backgroundColor: '#F1F3F4',
-                    backgroundImage: (type === 'church' ? (data as ChurchDetails).details?.logo_url : (data as EventDetails).details?.image_url)
-                        ? `url(${(type === 'church' ? (data as ChurchDetails).details?.logo_url : (data as EventDetails).details?.image_url)})`
-                        : 'none',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    position: 'relative',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                }}
-            >
-                {!(type === 'church' ? (data as ChurchDetails).details?.logo_url : (data as EventDetails).details?.image_url) && (
-                    <ImageIcon sx={{ fontSize: 48, color: '#DADCE0' }} />
-                )}
+            {(() => {
+                // Determine current data and type logic
+                const currentData = overrideData || data;
+                const currentType = overrideType || type;
+                
+                const imageUrl = currentType === 'church' 
+                    ? (currentData as ChurchDetails).details?.logo_url 
+                    : (currentData as EventDetails).details?.image_url;
 
-                <IconButton
-                    onClick={handleClose}
-                    aria-label="Fermer"
-                    sx={{
-                        position: 'absolute',
-                        top: 8,
-                        right: 8,
-                        backgroundColor: '#FFFFFF',
-                        color: '#5F6368',
-                        boxShadow: '0 1px 2px 0 rgba(60,64,67,0.3)',
-                        '&:hover': { backgroundColor: '#F8F9FA' }
-                    }}
-                >
-                    <Close />
-                </IconButton>
-            </Box>
+                // Render Image Header if URL exists
+                if (imageUrl) {
+                    return (
+                        <Box
+                            sx={{
+                                height: 200,
+                                backgroundColor: '#F1F3F4',
+                                backgroundImage: `url(${imageUrl})`,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                position: 'relative'
+                            }}
+                        >
+                            <IconButton
+                                onClick={handleClose}
+                                aria-label="Fermer"
+                                sx={{
+                                    position: 'absolute',
+                                    top: 8,
+                                    right: 8,
+                                    backgroundColor: '#FFFFFF',
+                                    color: '#5F6368',
+                                    boxShadow: '0 1px 2px 0 rgba(60,64,67,0.3)',
+                                    '&:hover': { backgroundColor: '#F8F9FA' }
+                                }}
+                            >
+                                <Close />
+                            </IconButton>
+                        </Box>
+                    );
+                }
+
+                // Render just Close button if no image
+                return (
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
+                        <IconButton
+                            onClick={handleClose}
+                            aria-label="Fermer"
+                            sx={{
+                                color: '#5F6368',
+                                '&:hover': { backgroundColor: '#F8F9FA' }
+                            }}
+                        >
+                            <Close />
+                        </IconButton>
+                    </Box>
+                );
+            })()}
 
             {overrideType === 'church' && overrideData
                 ? renderChurchDetails(overrideData as ChurchDetails)

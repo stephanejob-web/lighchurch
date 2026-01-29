@@ -12,48 +12,68 @@ const Sidebar: React.FC<SidebarProps> = ({ children, width = 400 }) => {
     const SIDEBAR_WIDTH = width;
 
     return (
-        <Paper
-            elevation={3}
+        <Box
             sx={{
                 position: 'absolute',
                 top: 0,
                 left: 0,
                 bottom: 0,
-                width: SIDEBAR_WIDTH,
-                zIndex: 1100, // Higher than map, lower than modals
-                borderRadius: 0,
+                zIndex: 1100,
+                pointerEvents: 'none', // Allow clicks to pass through empty space around the card
                 display: 'flex',
                 flexDirection: 'column',
-                overflow: 'visible',
-                backgroundColor: '#fff',
-                borderRight: '1px solid #dadce0',
-                transform: collapsed ? `translateX(-${SIDEBAR_WIDTH}px)` : 'translateX(0)',
-                transition: 'transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
+                justifyContent: 'flex-start', // Align to top
+                p: 2, // Margins from edge
             }}
         >
-            {/* Main Content (Hidden when collapsed to prevent focus/interaction) */}
-            <Box sx={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                overflow: 'hidden',
-                visibility: collapsed ? 'hidden' : 'visible'
-            }}>
-                {children}
-            </Box>
+            <Paper
+                elevation={3}
+                sx={{
+                    width: SIDEBAR_WIDTH,
+                    maxHeight: '100%',
+                    pointerEvents: 'auto', // Re-enable pointer events for the card itself
+                    borderRadius: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                    backgroundColor: '#fff',
+                    transform: collapsed ? `translateX(-${SIDEBAR_WIDTH + 20}px)` : 'translateX(0)',
+                    transition: 'transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
+                    position: 'relative' // For the toggle button absolute positioning
+                }}
+            >
+                {/* Main Content */}
+                <Box sx={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                }}>
+                    {children}
+                </Box>
+            </Paper>
 
-            {/* Google Maps Style Toggle Button */}
+            {/* Google Maps Style Toggle Button - Independent of text selection/overflow issues */}
             <Tooltip title={collapsed ? "Développer le panneau latéral" : "Réduire le panneau latéral"} placement="right">
                 <Paper
                     elevation={4}
                     onClick={() => setCollapsed(!collapsed)}
                     sx={{
                         position: 'absolute',
-                        top: '50%',
-                        right: -24, // Half width (48/2) outside, sticking out
-                        width: 24, // Visible width
+                        top: 24, // Align with top of the card roughly (approx 16px margin + 8px down?)
+                        // actually usually centered vertically on the side or at the top side.
+                        // Let's attach it to the side of the container "Box" but moving with the transform?
+                        // If I put it outside the Paper, I need to manage its transform manually.
+                        // Let's keep it simpler for now: attach to the Paper as before, but ensure it sticks out.
+                        
+                        // Revised approach: Place it relative to the wrapper Box but animate it.
+                        left: collapsed ? 0 : SIDEBAR_WIDTH + 16, // 16px padding
+                        transition: 'left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
+                        
+                        width: 24,
                         height: 48,
-                        transform: 'translateY(-50%)',
+                        mt: 2, // margin top relative to container
+                        pointerEvents: 'auto',
                         bgcolor: '#FFFFFF',
                         borderRadius: '0 8px 8px 0',
                         display: 'flex',
@@ -72,7 +92,7 @@ const Sidebar: React.FC<SidebarProps> = ({ children, width = 400 }) => {
                     </Box>
                 </Paper>
             </Tooltip>
-        </Paper>
+        </Box>
     );
 };
 

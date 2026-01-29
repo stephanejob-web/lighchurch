@@ -4,7 +4,7 @@ services:
     container_name: lightchurch-mysql
     restart: unless-stopped
     ports:
-      - "3306:3306"
+      - "${MYSQL_PORT:-3306}:3306"
     command: --default-time-zone='+01:00' --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
@@ -13,7 +13,7 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       TZ: Europe/Paris
     volumes:
-      - /home/deploy/data/lightchurch/mysql:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
       - ./lightchurch-backend/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
     networks:
       - lightchurch-network
@@ -29,7 +29,7 @@ services:
     container_name: lightchurch-backend
     restart: unless-stopped
     volumes:
-      - /home/deploy/data/lightchurch/uploads:/app/uploads
+      - uploads_data:/app/uploads
     environment:
       DB_HOST: mysql
       DB_USER: ${MYSQL_USER}
@@ -62,3 +62,7 @@ services:
 networks:
   lightchurch-network:
     driver: bridge
+
+volumes:
+  mysql_data:
+  uploads_data:
