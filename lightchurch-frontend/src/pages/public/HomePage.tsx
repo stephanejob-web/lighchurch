@@ -43,7 +43,7 @@ L.Icon.Default.mergeOptions({
 });
 
 // ============================================================================
-// OPTIMIZED CANVAS LAYER - Zero allocations during render
+// OPTIMIZED CANVAS LAYER - Overlay Pane Strategy
 // ============================================================================
 interface CanvasLayerProps {
     churchClusters: any[];
@@ -71,10 +71,10 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
     const map = useMap();
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const spritesRef = useRef<Record<string, HTMLCanvasElement>>({});
-    const lastZoomRef = useRef<number>(-1);
-
-    // Pre-allocate hit areas to avoid GC pressure
+    
+    // Store hit areas with their specific canvas offset
     const hitAreasRef = useRef<Array<{ x: number, y: number, r: number, type: 'church' | 'event', isCluster: boolean, data: any }>>([]);
+    const canvasOffsetRef = useRef<{ x: number, y: number }>({ x: 0, y: 0 });
 
     // Initialize sprites once
     const initSprites = useCallback(() => {
@@ -104,7 +104,6 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
             return c;
         };
 
-        // Initializing sprites
         spritesRef.current = {
             church: createMarkerSprite('#4285F4', 'cross', 10),
             churchSelected: createMarkerSprite('#4285F4', 'cross', 14, true),
@@ -114,44 +113,69 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
         };
     }, []);
 
-    // Optimized drawing loop
     const draw = useCallback(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
 
+        const bounds = map.getBounds();
+        
+        // Calculate the bounding box for the canvas in Layer Points (relative to the pane)
+        const topLeft = map.latLngToLayerPoint(bounds.getNorthWest());
         const size = map.getSize();
-        if (canvas.width !== size.x || canvas.height !== size.y) {
-            canvas.width = size.x; canvas.height = size.y;
+        
+        // Add padding (buffer) to ensure smooth panning without edges visible
+        // We render a canvas 2x the size of the viewport centered on the current view
+        const padding = { x: size.x * 0.5, y: size.y * 0.5 };
+        
+        // Offset the canvas top-left position
+        const offset = {
+            x: Math.round(topLeft.x - padding.x),
+            y: Math.round(topLeft.y - padding.y)
+        };
+
+        // Total canvas size
+        const width = size.x + padding.x * 2;
+        const height = size.y + padding.y * 2;
+
+        // Position the canvas element within the leaflet pane
+        L.DomUtil.setPosition(canvas, L.point(offset.x, offset.y));
+        
+        // Update canvas dimensions if needed (clears content automatically)
+        if (canvas.width !== width || canvas.height !== height) {
+            canvas.width = width;
+            canvas.height = height;
+        } else {
+            const ctx = canvas.getContext('2d');
+            ctx?.clearRect(0, 0, width, height);
         }
+
+        canvasOffsetRef.current = offset;
+        hitAreasRef.current.length = 0;
 
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        hitAreasRef.current.length = 0;
-
-        const zoom = map.getZoom();
-
-        if (zoom !== lastZoomRef.current) {
-            lastZoomRef.current = zoom;
-        }
 
         const sprites = spritesRef.current;
 
         const renderItems = (items: any[], type: 'church' | 'event') => {
             if (!items) return;
+            
+            // Re-usable point for transformation optimization
+            // We use latLngToLayerPoint to get coordinates relative to the map pane "origin"
+            
             for (let i = 0; i < items.length; i++) {
                 const item = items[i];
                 if (!item.geometry) continue;
 
                 const [lng, lat] = item.geometry.coordinates;
+                const point = map.latLngToLayerPoint([lat, lng]);
 
-                // Use latLngToContainerPoint for direct container coordinates (no caching needed)
-                const point = map.latLngToContainerPoint([lat, lng]);
-                const x = Math.round(point.x);
-                const y = Math.round(point.y);
+                // Convert LayerPoint (global pane px) to Canvas Local Point
+                const x = Math.round(point.x - offset.x);
+                const y = Math.round(point.y - offset.y);
 
-                if (x < -40 || x > canvas.width + 40 || y < -40 || y > canvas.height + 40) continue;
+                // Culling: check if point is inside the buffered canvas
+                if (x < -20 || x > width + 20 || y < -20 || y > height + 20) continue;
 
                 const isCluster = item.properties.cluster;
                 if (isCluster) {
@@ -172,6 +196,7 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
                     ctx.textBaseline = 'middle';
                     ctx.fillText(count >= 1000 ? Math.round(count/1000) + 'k' : String(count), x, y);
                     
+                    // Hit area stores CANVAS LOCAL coordinates
                     hitAreasRef.current.push({ x, y, r, type, isCluster: true, data: item });
                 } else {
                     const innerItem = item.properties.item;
@@ -183,8 +208,8 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
 
                     if (sprite) {
                         const sSize = sprite.width;
-                        const offset = sSize / 2;
-                        ctx.drawImage(sprite, x - offset, y - offset);
+                        const drawOffset = sSize / 2;
+                        ctx.drawImage(sprite, x - drawOffset, y - drawOffset);
                     }
                     
                     hitAreasRef.current.push({ x, y, r: isSelected ? 14 : 10, type, isCluster: false, data: innerItem });
@@ -197,15 +222,20 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
 
     }, [map, churchClusters, eventClusters, showChurches, showEvents, selectedId, selectedType, participations]);
 
-    const handleMapClick = useCallback((e: L.LeafletMouseEvent) => {
-        const mx = e.containerPoint.x;
-        const my = e.containerPoint.y;
+    const handleCanvasClick = useCallback((e: MouseEvent) => {
+        // e.offsetX/Y gives coordinates relative to the target element (canvas)
+        const mx = e.offsetX;
+        const my = e.offsetY;
 
         const hits = hitAreasRef.current;
+        // Check hits in reverse order (topmost first)
         for (let i = hits.length - 1; i >= 0; i--) {
             const hit = hits[i];
-            const dx = mx - hit.x; const dy = my - hit.y;
+            const dx = mx - hit.x;
+            const dy = my - hit.y;
+            
             if (dx * dx + dy * dy <= (hit.r + 5) * (hit.r + 5)) {
+                // Stop propagation? Probably not needed for canvas, but good practice
                 if (hit.isCluster) {
                     const [lng, lat] = hit.data.geometry.coordinates;
                     onClusterClick(hit.data.properties.cluster_id, hit.type, lat, lng, 0);
@@ -219,37 +249,37 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
 
     useEffect(() => {
         initSprites();
-        const container = map.getContainer();
-        let canvas = container.querySelector('.markers-canvas') as HTMLCanvasElement;
-
-        if (!canvas) {
-            canvas = document.createElement('canvas');
-            canvas.className = 'markers-canvas';
-            canvas.style.cssText = 'position:absolute;top:0;left:0;z-index:450;pointer-events:none;';
-            container.appendChild(canvas);
-        }
+        
+        const canvas = document.createElement('canvas');
+        canvas.className = 'leaflet-zoom-animated'; // Critical for smooth zoom animation
+        canvas.style.zIndex = '450';
+        canvas.style.pointerEvents = 'auto'; // allow clicks
+        
+        // Attach to overlay pane so it moves with the map (hardware accelerated CSS)
+        map.getPanes().overlayPane.appendChild(canvas);
         canvasRef.current = canvas;
 
-        const onMove = () => draw();
-        map.on('move', onMove);
-        map.on('zoom', onMove);
-        map.on('viewreset', onMove);
-        map.on('resize', onMove);
-        map.on('click', handleMapClick);
+        // Native click listener on canvas
+        canvas.addEventListener('click', handleCanvasClick);
 
+        const onMoveEnd = () => draw();
+        const onZoomEnd = () => draw();
+        
+        // We only listen to "end" events because CSS handles the "during" phase!
+        map.on('moveend', onMoveEnd);
+        map.on('zoomend', onZoomEnd);
+        // Force initial draw
         draw();
 
         return () => {
-            map.off('move', onMove);
-            map.off('zoom', onMove);
-            map.off('viewreset', onMove);
-            map.off('resize', onMove);
-            map.off('click', handleMapClick);
+            map.off('moveend', onMoveEnd);
+            map.off('zoomend', onZoomEnd);
+            canvas.removeEventListener('click', handleCanvasClick);
             if (canvas.parentNode) {
                 canvas.parentNode.removeChild(canvas);
             }
         };
-    }, [map, draw, handleMapClick, initSprites]);
+    }, [map, draw, handleCanvasClick, initSprites]);
 
     return null;
 });
