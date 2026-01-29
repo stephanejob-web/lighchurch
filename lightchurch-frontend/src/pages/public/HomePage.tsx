@@ -48,6 +48,7 @@ interface CanvasLayerProps {
     clusters: any[];
     selectedId: number | null;
     selectedType: 'church' | 'event' | null;
+    selectedItemData: any | null; // New prop for forced rendering
     showChurches: boolean;
     showEvents: boolean;
     participations: Set<number>;
@@ -59,6 +60,7 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
     clusters,
     selectedId,
     selectedType,
+    selectedItemData,
     showChurches,
     showEvents,
     participations,
@@ -277,40 +279,81 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
             }
         }
 
+        // Fallback: Si le marqueur sélectionné n'a pas été trouvé dans les clusters (e.g. chargement unique via ID ou hors vue initiale)
+        if (!selectedMarkerData && selectedItemData && selectedType && selectedItemData.latitude && selectedItemData.longitude) {
+            const lat = selectedItemData.latitude;
+            const lng = selectedItemData.longitude;
+            const point = map.latLngToLayerPoint([lat, lng]);
+            const x = Math.round(point.x - offset.x);
+            const y = Math.round(point.y - offset.y);
+
+            // Vérifier si c'est dans le canvas (pour éviter de dessiner hors écran si loin)
+             if (x >= -50 && x <= width + 50 && y >= -50 && y <= height + 50) {
+                const sprite = selectedType === 'church' ? sprites.churchSelected : sprites.eventSelected;
+                if (sprite) {
+                     selectedMarkerData = { x, y, sprite, itemType: selectedType, innerItem: selectedItemData };
+                     // Ajouter hitArea pour qu'on puisse cliquer dessus même si "artificiel"
+                      hitAreasRef.current.push({ x, y, r: 18, type: selectedType, isCluster: false, data: selectedItemData });
+                }
+             }
+        }
+
         // Dessiner le marqueur sélectionné en dernier (au-dessus de tout)
         if (selectedMarkerData) {
             const { x, y, sprite, itemType } = selectedMarkerData;
+            
+            // --- EFFET BOUNCE (Rebond) ---
+            // Oscillation rapide pour le saut (Y seulement)
+            // Utilise la valeur absolue de sin pour faire des bonds, pas des vagues
+            const bounceHeight = 15;
+            const bounceSpeed = 0.08;
+            const bounceY = -Math.abs(Math.sin(pulse * bounceSpeed)) * bounceHeight;
 
-            // Effet de halo pulsant
-            const pulseScale = 0.5 + Math.sin(pulse * 0.05) * 0.5; // Oscillation entre 0 et 1
-            const maxRingRadius = 35;
-            const minRingRadius = 20;
-            const ringRadius = minRingRadius + (maxRingRadius - minRingRadius) * pulseScale;
-            const ringAlpha = 0.6 - pulseScale * 0.4; // Plus opaque quand petit, plus transparent quand grand
-
+            // --- EFFET RADAR (Ondes multiples) ---
             // Couleur du halo selon le type
             const ringColor = itemType === 'church' ? '66, 133, 244' : '234, 67, 53'; // RGB
+            
+            // Dessiner 3 ondes concentriques
+            const numRings = 3;
+            const maxRadius = 50;
+            const duration = 100; // Durée d'un cycle en frames
+            
+            for (let i = 0; i < numRings; i++) {
+                // Décalage pour chaque onde
+                const offset = (i * duration) / numRings;
+                const progress = ((pulse + offset) % duration) / duration; // 0 à 1
+                
+                // Rayon grandit avec le temps
+                const radius = 10 + progress * maxRadius;
+                
+                // Opacité diminue avec l'expansion (s'estompe vers la fin)
+                const alpha = 0.6 * (1 - progress); 
+                
+                if (alpha > 0.01) {
+                   ctx.beginPath();
+                   ctx.arc(x, y, radius, 0, PI2);
+                   ctx.fillStyle = `rgba(${ringColor}, ${alpha * 0.5})`;
+                   ctx.fill();
+                   ctx.strokeStyle = `rgba(${ringColor}, ${alpha})`;
+                   ctx.lineWidth = 1;
+                   ctx.stroke();
+                }
+            }
 
-            // Dessiner le halo pulsant
-            ctx.beginPath();
-            ctx.arc(x, y, ringRadius, 0, PI2);
-            ctx.fillStyle = `rgba(${ringColor}, ${ringAlpha * 0.3})`;
-            ctx.fill();
-            ctx.strokeStyle = `rgba(${ringColor}, ${ringAlpha})`;
-            ctx.lineWidth = 3;
-            ctx.stroke();
-
-            // Deuxième anneau plus petit et plus opaque
-            const innerRingRadius = minRingRadius + (maxRingRadius - minRingRadius) * pulseScale * 0.6;
-            ctx.beginPath();
-            ctx.arc(x, y, innerRingRadius, 0, PI2);
-            ctx.strokeStyle = `rgba(${ringColor}, ${ringAlpha * 1.5})`;
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // Dessiner le marqueur sélectionné
+            // Dessiner le marqueur avec le décalage de rebond
             const drawOffset = sprite.width / 2;
-            ctx.drawImage(sprite, x - drawOffset, y - drawOffset);
+            
+            // Ombre au sol (fixe, mais s'agrandit/rétrécit inversement au saut pour le réalisme)
+            const shadowScale = 1 - (Math.abs(bounceY) / bounceHeight) * 0.4; // Plus petit quand haut
+            const shadowAlpha = 0.4 - (Math.abs(bounceY) / bounceHeight) * 0.2; // Plus clair quand haut
+            
+            ctx.beginPath();
+            ctx.ellipse(x, y, 8 * shadowScale, 3 * shadowScale, 0, 0, PI2);
+            ctx.fillStyle = `rgba(0,0,0,${shadowAlpha})`;
+            ctx.fill();
+
+            // Le sprite saute
+            ctx.drawImage(sprite, x - drawOffset, y - drawOffset + bounceY);
         }
     }, [map, clusters, showChurches, showEvents, selectedId, selectedType, participations]);
 
@@ -1027,6 +1070,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                 // setDetailDrawerOpen(true); // Already open
                                 setMapCenter([c.latitude, c.longitude]);
                                 setMapZoom(16);
+                                mapInstance?.flyTo([c.latitude, c.longitude], 16, { duration: 1 });
                                 
                                 try {
                                     const { fetchChurchDetails } = await import('../../services/publicMapService');
@@ -1075,6 +1119,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                         setSelectedType('church');
                                         setMapCenter([c.latitude, c.longitude]);
                                         setMapZoom(16);
+                                        mapInstance?.flyTo([c.latitude, c.longitude], 16, { duration: 1 });
                                         
                                         try {
                                             const { fetchChurchDetails } = await import('../../services/publicMapService');
@@ -1131,6 +1176,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                     clusters={finalClusters}
                     selectedId={selectedItem?.id || null}
                     selectedType={selectedType}
+                    selectedItemData={selectedItem}
                     showChurches={showChurches}
                     showEvents={showEvents}
                     participations={participations}
