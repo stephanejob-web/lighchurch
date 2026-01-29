@@ -39,6 +39,11 @@ interface MapBounds {
     west: number;
 }
 
+interface UserLocation {
+    latitude: number;
+    longitude: number;
+}
+
 interface ResultsPanelProps {
     onChurchClick: (church: Church) => void;
     onEventClick: (event: Event) => void;
@@ -47,6 +52,7 @@ interface ResultsPanelProps {
     isGeolocated?: boolean;
     isMobileView?: boolean;
     currentBounds?: MapBounds | null;
+    userLocation?: UserLocation | null;
 }
 
 const PAGE_SIZE = 20;
@@ -74,7 +80,7 @@ const getSmartTimeDisplay = (
         if (now >= startTime && endTime && now <= endTime) {
             const remaining = getRemainingTime(endDatetime);
             if (remaining) {
-                return { text: `Se termine dans ${remaining.text}`, color: '#E37400' };
+                return { text: `Se termine dans ${remaining.text}`, color: '#34A853' };
             }
         }
 
@@ -186,13 +192,13 @@ const EventCard: React.FC<{ event: Event; onClick: () => void }> = React.memo(({
             sx={{
                 py: 2, px: 3, display: 'flex', gap: 2.5,
                 borderBottom: '1px solid #E8EAED',
-                bgcolor: isCancelled ? '#F1F3F4' : (isOngoing ? '#FFF8F0' : '#FFFFFF'),
+                bgcolor: isCancelled ? '#F1F3F4' : (isOngoing ? '#E8F5E9' : '#FFFFFF'),
                 cursor: 'pointer', transition: 'all 0.2s ease',
                 borderRadius: '8px', mx: 1, my: 0.5,
-                borderLeft: isCancelled ? '4px solid #EA4335' : (isOngoing ? '4px solid #E37400' : 'none'),
+                borderLeft: isCancelled ? '4px solid #EA4335' : (isOngoing ? '4px solid #34A853' : 'none'),
                 pl: (isCancelled || isOngoing) ? 2.5 : 3,
                 opacity: isCancelled ? 0.8 : 1,
-                '&:hover': { bgcolor: isCancelled ? '#E8EAED' : (isOngoing ? '#FFF3E6' : '#F8F9FA'), transform: 'translateX(4px)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }
+                '&:hover': { bgcolor: isCancelled ? '#E8EAED' : (isOngoing ? '#C8E6C9' : '#F8F9FA'), transform: 'translateX(4px)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }
             }}
             onClick={onClick}
         >
@@ -208,8 +214,8 @@ const EventCard: React.FC<{ event: Event; onClick: () => void }> = React.memo(({
                     </Box>
                 )}
                 {(isOngoing && !isCancelled) && (
-                    <Box sx={{ mb: 0.5 }}>
-                        <Chip label="EN COURS" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, bgcolor: '#EA4335', color: '#FFFFFF', letterSpacing: '0.5px', animation: 'pulse 2s ease-in-out infinite', '@keyframes pulse': { '0%, 100%': { opacity: 1 }, '50%': { opacity: 0.85 } } }} />
+                    <Box sx={{ mb: 1 }}>
+                        <Chip label="EN COURS" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, bgcolor: '#34A853', color: '#FFFFFF', letterSpacing: '0.5px' }} />
                     </Box>
                 )}
                 <Typography variant="subtitle1" sx={{ fontWeight: 500, color: isCancelled ? '#5F6368' : '#202124', lineHeight: 1.2, mb: 0.5, textDecoration: isCancelled ? 'line-through' : 'none' }}>
@@ -271,7 +277,8 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
     onEventClick,
     onClose,
     open = true,
-    currentBounds
+    currentBounds,
+    userLocation
 }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -333,9 +340,12 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
             setInitialLoadDone(false);
 
             try {
+                // Inclure les coordonnées utilisateur pour le calcul de distance
+                const userParams = userLocation ? { userLat: userLocation.latitude, userLng: userLocation.longitude } : {};
+
                 const [churchResult, eventResult] = await Promise.all([
-                    filterChurches ? fetchChurchesPaginated({ ...currentBounds, limit: PAGE_SIZE, offset: 0 }) : Promise.resolve({ data: [], hasMore: false }),
-                    filterEvents ? fetchEventsPaginated({ ...currentBounds, limit: PAGE_SIZE, offset: 0 }) : Promise.resolve({ data: [], hasMore: false })
+                    filterChurches ? fetchChurchesPaginated({ ...currentBounds, ...userParams, limit: PAGE_SIZE, offset: 0 }) : Promise.resolve({ data: [], hasMore: false }),
+                    filterEvents ? fetchEventsPaginated({ ...currentBounds, ...userParams, limit: PAGE_SIZE, offset: 0 }) : Promise.resolve({ data: [], hasMore: false })
                 ]);
 
                 setChurches(churchResult.data);
@@ -357,7 +367,7 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
                 clearTimeout(fetchTimeoutRef.current);
             }
         };
-    }, [currentBounds, filterChurches, filterEvents]);
+    }, [currentBounds, filterChurches, filterEvents, userLocation]);
 
     // Charger plus de données au scroll
     const loadMore = useCallback(async () => {
@@ -366,17 +376,20 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
 
         setIsLoadingMore(true);
 
+        // Inclure les coordonnées utilisateur pour le calcul de distance
+        const userParams = userLocation ? { userLat: userLocation.latitude, userLng: userLocation.longitude } : {};
+
         try {
             const promises: Promise<any>[] = [];
 
             if (filterChurches && hasMoreChurches) {
-                promises.push(fetchChurchesPaginated({ ...currentBounds, limit: PAGE_SIZE, offset: churchOffset }));
+                promises.push(fetchChurchesPaginated({ ...currentBounds, ...userParams, limit: PAGE_SIZE, offset: churchOffset }));
             } else {
                 promises.push(Promise.resolve(null));
             }
 
             if (filterEvents && hasMoreEvents) {
-                promises.push(fetchEventsPaginated({ ...currentBounds, limit: PAGE_SIZE, offset: eventOffset }));
+                promises.push(fetchEventsPaginated({ ...currentBounds, ...userParams, limit: PAGE_SIZE, offset: eventOffset }));
             } else {
                 promises.push(Promise.resolve(null));
             }
@@ -399,7 +412,7 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
         } finally {
             setIsLoadingMore(false);
         }
-    }, [currentBounds, churchOffset, eventOffset, hasMoreChurches, hasMoreEvents, filterChurches, filterEvents, isLoadingMore]);
+    }, [currentBounds, churchOffset, eventOffset, hasMoreChurches, hasMoreEvents, filterChurches, filterEvents, isLoadingMore, userLocation]);
 
     // Intersection Observer pour le scroll infini
     useEffect(() => {
@@ -481,7 +494,9 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
 
     const hasMore = (filterChurches && hasMoreChurches) || (filterEvents && hasMoreEvents);
     const totalCount = filteredAndSortedData.length;
-    const showSearchBar = totalCount > 15;
+    // Afficher la barre de recherche si le nombre total (avant filtrage) > 15
+    const totalBeforeFilter = churches.length + events.length;
+    const showSearchBar = totalBeforeFilter > 15 || searchQuery.length > 0;
 
     const content = (
         <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: '#FFFFFF' }}>
