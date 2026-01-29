@@ -81,15 +81,15 @@ const SearchPanel: React.FC<SearchPanelProps & { embedded?: boolean }> = ({ onSe
         <Box
             ref={wrapperRef}
             sx={embedded ? {
-                p: 2,
+                px: 2,
+                py: 1.5,
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 1,
                 width: '100%',
-                bgcolor: '#fff',
+                bgcolor: 'transparent',
                 zIndex: 2000,
                 flexShrink: 0,
-                borderBottom: '1px solid #f0f0f0',
                 position: 'relative'
             } : {
                 position: 'absolute',
@@ -114,8 +114,8 @@ const SearchPanel: React.FC<SearchPanelProps & { embedded?: boolean }> = ({ onSe
                     // Google Maps search bar is more rounded. Let's try 8px (2) or 24px (pill) if we want "Google" style. 
                     // But in sidebar it's usually a rectangle with rounded corners.
 
-                    boxShadow: embedded ? 'none' : '0 2px 4px rgba(0,0,0,0.2)',
-                    border: embedded ? '1px solid #dadce0' : 'none',
+                    boxShadow: embedded ? '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)' : '0 2px 4px rgba(0,0,0,0.2)',
+                    border: 'none',
                     position: 'relative',
                     bgcolor: '#fff',
                     transition: 'box-shadow 0.2s',

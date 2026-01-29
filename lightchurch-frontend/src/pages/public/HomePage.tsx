@@ -15,6 +15,7 @@ import {
     Home as HomeIcon,
     Add as AddIcon,
     Remove as RemoveIcon,
+    Undo as UndoIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
@@ -460,6 +461,11 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
     const [mapType, setMapType] = useState<'satellite' | 'standard'>('satellite');
     const [resultsPanelOpen, setResultsPanelOpen] = useState(true);
 
+    // ========== NAVIGATION HISTORY (Bouton Retour) ==========
+    const [previousPosition, setPreviousPosition] = useState<{ center: [number, number]; zoom: number } | null>(null);
+    const [showReturnButton, setShowReturnButton] = useState(false);
+    const returnButtonTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
     // ========== PARTICIPATIONS ==========
     const [participations, setParticipations] = useState<Set<number>>(() => {
         try {
@@ -761,15 +767,49 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
     }, []);
 
     const handleLocationSelect = useCallback((lat: number, lng: number) => {
+        // Sauvegarder la position actuelle avant de se déplacer
+        if (mapInstance) {
+            const currentCenter = mapInstance.getCenter();
+            const currentZoom = mapInstance.getZoom();
+            setPreviousPosition({
+                center: [currentCenter.lat, currentCenter.lng],
+                zoom: currentZoom
+            });
+
+            // Afficher le bouton retour
+            setShowReturnButton(true);
+
+            // Auto-masquer après 10 secondes
+            if (returnButtonTimeoutRef.current) {
+                clearTimeout(returnButtonTimeoutRef.current);
+            }
+            returnButtonTimeoutRef.current = setTimeout(() => {
+                setShowReturnButton(false);
+            }, 10000);
+        }
+
         setMapCenter([lat, lng]);
         setMapZoom(14);
-    }, []);
+    }, [mapInstance]);
 
     const handleRecenter = useCallback(() => {
         if (userLocation && mapInstance) {
             mapInstance.flyTo([userLocation.latitude, userLocation.longitude], 13, { duration: 0.5 });
         }
     }, [userLocation, mapInstance]);
+
+    const handleReturnToPrevious = useCallback(() => {
+        if (previousPosition && mapInstance) {
+            mapInstance.flyTo(previousPosition.center, previousPosition.zoom, { duration: 0.5 });
+            setShowReturnButton(false);
+            setPreviousPosition(null);
+
+            // Annuler le timeout
+            if (returnButtonTimeoutRef.current) {
+                clearTimeout(returnButtonTimeoutRef.current);
+            }
+        }
+    }, [previousPosition, mapInstance]);
 
     return (
         <React.Fragment>
@@ -876,6 +916,44 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                     onClusterClick={handleClusterClick}
                 />
             </MapContainer>
+
+            {/* Bouton Retour flottant - apparaît après une recherche de lieu */}
+            {showReturnButton && previousPosition && (
+                <Box
+                    onClick={handleReturnToPrevious}
+                    sx={{
+                        position: 'absolute',
+                        bottom: 24,
+                        left: isMobile ? 16 : 432,
+                        zIndex: 1000,
+                        bgcolor: 'white',
+                        px: 2,
+                        py: 1,
+                        borderRadius: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                        transition: 'all 0.3s ease',
+                        animation: 'slideIn 0.3s ease',
+                        '@keyframes slideIn': {
+                            from: { opacity: 0, transform: 'translateY(20px)' },
+                            to: { opacity: 1, transform: 'translateY(0)' }
+                        },
+                        '&:hover': {
+                            bgcolor: '#F8F9FA',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+                            transform: 'scale(1.02)'
+                        }
+                    }}
+                >
+                    <UndoIcon sx={{ color: '#1A73E8', fontSize: 20 }} />
+                    <Box component="span" sx={{ color: '#1A73E8', fontWeight: 500, fontSize: '0.875rem' }}>
+                        Retour
+                    </Box>
+                </Box>
+            )}
 
             <Box sx={{ position: 'absolute', bottom: 24, right: 24, display: 'flex', alignItems: 'flex-end', gap: 1.5, zIndex: 1000 }}>
                 {/* 1. Layer Switcher (Sitting to the left) - Google Maps style with real map thumbnails */}
