@@ -776,29 +776,13 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                 />
             </MapContainer>
 
-            <Box sx={{ position: 'absolute', bottom: 24, right: 24, display: 'flex', flexDirection: 'column', gap: 2, zIndex: 1000 }}>
-                <Tooltip title="Accueil" placement="left">
-                    <Paper elevation={2} sx={{ bgcolor: 'white', borderRadius: 2, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                        onClick={() => navigate('/')}>
-                        <HomeIcon sx={{ color: '#666' }} />
-                    </Paper>
-                </Tooltip>
-
-                <Tooltip title="Mes participations" placement="left">
-                    <Paper elevation={2} sx={{ bgcolor: 'secondary.main', borderRadius: 2, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                        onClick={() => navigate('/my-participations')}>
-                        <Badge badgeContent={participations.size} color="primary" max={99}>
-                            <EventIcon sx={{ color: 'white' }} />
-                        </Badge>
-                    </Paper>
-                </Tooltip>
-
-                {/* Google Maps Style Layer Switcher */}
+            <Box sx={{ position: 'absolute', bottom: 24, right: 24, display: 'flex', alignItems: 'flex-end', gap: 2, zIndex: 1000 }}>
+                {/* 1. Layer Switcher (Sitting to the left) */}
                 <Box
                     onClick={() => setMapType(mapType === 'satellite' ? 'standard' : 'satellite')}
                     sx={{
-                        width: 56,
-                        height: 56,
+                        width: 64, // Slightly larger for "Google" feel
+                        height: 64,
                         borderRadius: 2,
                         cursor: 'pointer',
                         border: '2px solid #FFFFFF',
@@ -808,14 +792,13 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                         transition: 'all 0.2s ease',
                         '&:hover': {
                             boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
+                            transform: 'scale(1.02)'
                         },
-                        // Background mimics the "target" view
                         background: mapType === 'satellite' 
-                            ? 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)' // Standard view preview
-                            : 'linear-gradient(135deg, #1a237e 0%, #2e7d32 100%)' // Satellite view preview
+                            ? 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)' 
+                            : 'linear-gradient(135deg, #1a237e 0%, #2e7d32 100%)'
                     }}
                 >
-                    {/* Visual details for "Standard" preview (Grid lines) */}
                     {mapType === 'satellite' && (
                         <Box sx={{
                             position: 'absolute', inset: 0, opacity: 0.3,
@@ -823,32 +806,51 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                             backgroundSize: '10px 10px'
                         }} />
                     )}
-                    
-                    {/* Label */}
                     <Box sx={{
-                        position: 'absolute',
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        bgcolor: 'rgba(0,0,0,0.5)',
-                        color: 'white',
-                        fontSize: '0.65rem',
-                        textAlign: 'center',
-                        py: 0.5,
+                        position: 'absolute', bottom: 0, left: 0, right: 0,
+                        bgcolor: 'rgba(0,0,0,0.6)', color: 'white',
+                        fontSize: '0.7rem', fontWeight: 500, textAlign: 'center', py: 0.5,
                         backdropFilter: 'blur(2px)'
                     }}>
                         {mapType === 'satellite' ? 'Plan' : 'Satellite'}
                     </Box>
                 </Box>
 
-                {userLocation && (
-                    <Tooltip title="Ma position" placement="left">
-                        <Paper elevation={2} sx={{ bgcolor: 'white', borderRadius: 2, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                            onClick={handleRecenter}>
-                            <MyLocationIcon sx={{ color: '#666' }} />
+                {/* 2. Action Buttons Stack (Home, Participations, Location) */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    {userLocation && (
+                        <Tooltip title="Ma position" placement="left">
+                            <Paper elevation={2} sx={{ 
+                                bgcolor: 'white', borderRadius: '50%', width: 44, height: 44, 
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                                color: '#666', '&:hover': { color: '#1A73E8' } 
+                            }} onClick={handleRecenter}>
+                                <MyLocationIcon />
+                            </Paper>
+                        </Tooltip>
+                    )}
+
+                    <Tooltip title="Mes participations" placement="left">
+                        <Paper elevation={2} sx={{ 
+                            bgcolor: 'white', borderRadius: '50%', width: 44, height: 44, 
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' 
+                        }} onClick={() => navigate('/my-participations')}>
+                            <Badge badgeContent={participations.size} color="error" max={99}>
+                                <EventIcon sx={{ color: participations.size > 0 ? '#EA4335' : '#666' }} />
+                            </Badge>
                         </Paper>
                     </Tooltip>
-                )}
+
+                    <Tooltip title="Accueil" placement="left">
+                        <Paper elevation={2} sx={{ 
+                            bgcolor: 'white', borderRadius: '50%', width: 44, height: 44, 
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                            color: '#666', '&:hover': { color: '#1A73E8' }
+                        }} onClick={() => navigate('/')}>
+                            <HomeIcon />
+                        </Paper>
+                    </Tooltip>
+                </Box>
             </Box>
         </React.Fragment>
     );
