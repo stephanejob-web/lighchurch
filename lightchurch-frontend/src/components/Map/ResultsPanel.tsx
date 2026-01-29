@@ -30,8 +30,6 @@ import { fr } from 'date-fns/locale';
 import type { Church, Event } from '../../types/publicMap';
 import { formatDistance, fetchChurchesPaginated, fetchEventsPaginated } from '../../services/publicMapService';
 
-type SortType = 'distance' | 'date';
-
 interface MapBounds {
     north: number;
     south: number;
@@ -287,7 +285,6 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
     const [searchQuery, setSearchQuery] = useState('');
     const [filterChurches, setFilterChurches] = useState(true);
     const [filterEvents, setFilterEvents] = useState(true);
-    const [sortBy, setSortBy] = useState<SortType>('distance');
 
     // États pour la pagination serveur
     const [churches, setChurches] = useState<Church[]>([]);
@@ -441,14 +438,6 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
         setFilterEvents(prev => !prev);
     }, []);
 
-    const handleSortChange = useCallback((newSortType: SortType) => {
-        setSortBy(newSortType);
-        if (newSortType === 'date') {
-            setFilterChurches(false);
-            setFilterEvents(true);
-        }
-    }, []);
-
     // Combiner et filtrer les données
     const filteredAndSortedData = useMemo(() => {
         const items: Array<{ type: 'church' | 'event'; data: Church | Event }> = [];
@@ -479,18 +468,26 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
             });
         }
 
-        // Tri
+        // Tri intelligent automatique :
+        // - Événements : par date (du plus proche au plus éloigné)
+        // - Églises : par distance
+        // - Si les deux : événements d'abord (par date), puis églises (par distance)
         return filteredItems.sort((a, b) => {
-            if (sortBy === 'distance') {
-                return (a.data.distance_km ?? Infinity) - (b.data.distance_km ?? Infinity);
-            } else {
-                if (a.type === 'event' && b.type === 'event') {
-                    return new Date((b.data as Event).start_datetime).getTime() - new Date((a.data as Event).start_datetime).getTime();
-                }
+            // Si types différents : événements en premier
+            if (a.type !== b.type) {
                 return a.type === 'event' ? -1 : 1;
             }
+
+            // Même type : tri spécifique
+            if (a.type === 'event') {
+                // Événements : par date croissante (prochains en premier)
+                return new Date((a.data as Event).start_datetime).getTime() - new Date((b.data as Event).start_datetime).getTime();
+            } else {
+                // Églises : par distance croissante (plus proches en premier)
+                return (a.data.distance_km ?? Infinity) - (b.data.distance_km ?? Infinity);
+            }
         });
-    }, [churches, events, filterChurches, filterEvents, searchQuery, sortBy]);
+    }, [churches, events, filterChurches, filterEvents, searchQuery]);
 
     const hasMore = (filterChurches && hasMoreChurches) || (filterEvents && hasMoreEvents);
     const totalCount = filteredAndSortedData.length;
@@ -565,17 +562,6 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
                             borderColor: filterEvents ? '#1A73E8' : '#DADCE0',
                             borderWidth: filterEvents ? 2 : 1, borderStyle: 'solid',
                             fontWeight: filterEvents ? 500 : 400, fontSize: '0.875rem', height: 32, borderRadius: '16px'
-                        }}
-                    />
-                    <Chip
-                        icon={sortBy === 'distance' ? <CheckIcon sx={{ fontSize: 16 }} /> : undefined}
-                        label="Les plus proches"
-                        onClick={() => handleSortChange('distance')}
-                        sx={{
-                            bgcolor: '#FFFFFF', color: sortBy === 'distance' ? '#1A73E8' : '#5F6368',
-                            borderColor: sortBy === 'distance' ? '#1A73E8' : '#DADCE0',
-                            borderWidth: sortBy === 'distance' ? 2 : 1, borderStyle: 'solid',
-                            fontWeight: sortBy === 'distance' ? 500 : 400, fontSize: '0.875rem', height: 32, borderRadius: '16px'
                         }}
                     />
                 </Stack>
