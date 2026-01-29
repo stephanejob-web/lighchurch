@@ -48,6 +48,7 @@ interface CanvasLayerProps {
     clusters: any[];
     selectedId: number | null;
     selectedType: 'church' | 'event' | null;
+    selectedItemData: any | null; // New prop for forced rendering
     showChurches: boolean;
     showEvents: boolean;
     participations: Set<number>;
@@ -59,6 +60,7 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
     clusters,
     selectedId,
     selectedType,
+    selectedItemData,
     showChurches,
     showEvents,
     participations,
@@ -275,6 +277,25 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
 
                 hitAreasRef.current.push({ x, y, r: 10, type: itemType, isCluster: false, data: innerItem });
             }
+        }
+
+        // Fallback: Si le marqueur sélectionné n'a pas été trouvé dans les clusters (e.g. chargement unique via ID ou hors vue initiale)
+        if (!selectedMarkerData && selectedItemData && selectedType && selectedItemData.latitude && selectedItemData.longitude) {
+            const lat = selectedItemData.latitude;
+            const lng = selectedItemData.longitude;
+            const point = map.latLngToLayerPoint([lat, lng]);
+            const x = Math.round(point.x - offset.x);
+            const y = Math.round(point.y - offset.y);
+
+            // Vérifier si c'est dans le canvas (pour éviter de dessiner hors écran si loin)
+             if (x >= -50 && x <= width + 50 && y >= -50 && y <= height + 50) {
+                const sprite = selectedType === 'church' ? sprites.churchSelected : sprites.eventSelected;
+                if (sprite) {
+                     selectedMarkerData = { x, y, sprite, itemType: selectedType, innerItem: selectedItemData };
+                     // Ajouter hitArea pour qu'on puisse cliquer dessus même si "artificiel"
+                      hitAreasRef.current.push({ x, y, r: 18, type: selectedType, isCluster: false, data: selectedItemData });
+                }
+             }
         }
 
         // Dessiner le marqueur sélectionné en dernier (au-dessus de tout)
@@ -1049,6 +1070,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                 // setDetailDrawerOpen(true); // Already open
                                 setMapCenter([c.latitude, c.longitude]);
                                 setMapZoom(16);
+                                mapInstance?.flyTo([c.latitude, c.longitude], 16, { duration: 1 });
                                 
                                 try {
                                     const { fetchChurchDetails } = await import('../../services/publicMapService');
@@ -1097,6 +1119,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                         setSelectedType('church');
                                         setMapCenter([c.latitude, c.longitude]);
                                         setMapZoom(16);
+                                        mapInstance?.flyTo([c.latitude, c.longitude], 16, { duration: 1 });
                                         
                                         try {
                                             const { fetchChurchDetails } = await import('../../services/publicMapService');
@@ -1153,6 +1176,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                     clusters={finalClusters}
                     selectedId={selectedItem?.id || null}
                     selectedType={selectedType}
+                    selectedItemData={selectedItem}
                     showChurches={showChurches}
                     showEvents={showEvents}
                     participations={participations}
