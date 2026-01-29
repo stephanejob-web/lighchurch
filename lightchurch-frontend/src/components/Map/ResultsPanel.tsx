@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
     Box,
     Paper,
@@ -12,7 +12,8 @@ import {
     useTheme,
     Chip,
     Skeleton,
-    InputBase
+    InputBase,
+    CircularProgress
 } from '@mui/material';
 import {
     Close as CloseIcon,
@@ -486,6 +487,11 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
     const [showMyParticipations, setShowMyParticipations] = useState(false);
     const [sortBy, setSortBy] = useState<SortType>('distance');
 
+    // États pour le scroll infini
+    const [displayCount, setDisplayCount] = useState(20);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const loaderRef = useRef<HTMLDivElement>(null);
+
     // Taille fixe du panneau
     const panelWidth = 400; // Largeur fixe
 
@@ -531,13 +537,23 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
     }, [currentBounds]);
 
     // Filtrer les données par ce qui est visible sur la carte
+    // Pendant le chargement, ne pas filtrer pour éviter une liste vide
     const visibleChurches = useMemo(() => {
-        return churches.filter(c => isInBounds(c.latitude, c.longitude));
-    }, [churches, isInBounds]);
+        if (loading) return churches; // Pas de filtrage pendant le chargement
+        const filtered = churches.filter(c => isInBounds(c.latitude, c.longitude));
+        // Si aucun résultat après filtrage mais qu'on a des données, les données sont de l'ancienne zone
+        // On affiche quand même les données en attendant les nouvelles
+        if (filtered.length === 0 && churches.length > 0) return churches;
+        return filtered;
+    }, [churches, isInBounds, loading]);
 
     const visibleEvents = useMemo(() => {
-        return events.filter(e => isInBounds(e.latitude, e.longitude));
-    }, [events, isInBounds]);
+        if (loading) return events; // Pas de filtrage pendant le chargement
+        const filtered = events.filter(e => isInBounds(e.latitude, e.longitude));
+        // Si aucun résultat après filtrage mais qu'on a des données, les données sont de l'ancienne zone
+        if (filtered.length === 0 && events.length > 0) return events;
+        return filtered;
+    }, [events, isInBounds, loading]);
 
     // Filtrer et trier les données
     const filteredAndSortedData = useMemo(() => {
@@ -588,8 +604,8 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
             filteredItems = filteredItems.filter(item => item.type === 'event' && local[String(item.data.id)] !== undefined);
         }
 
-        // Limit for performance - only sort and show top 50
-        const top50 = filteredItems.sort((a, b) => {
+        // Trier tous les éléments (pas de limite)
+        const sorted = filteredItems.sort((a, b) => {
             if (sortBy === 'distance') {
                 const distA = a.data.distance_km ?? Infinity;
                 const distB = b.data.distance_km ?? Infinity;
@@ -602,9 +618,9 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
                 }
                 return a.type === 'event' ? -1 : 1;
             }
-        }).slice(0, 50);
+        });
 
-        return top50;
+        return sorted;
     }, [churches, events, filterChurches, filterEvents, searchQuery, sortBy, showMyParticipations]);
 
     // Calculer le total avant filtre de recherche (basé sur les éléments visibles)
@@ -616,6 +632,42 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
     }, [visibleChurches.length, visibleEvents.length, filterChurches, filterEvents]);
 
     const showSearchBar = totalBeforeSearch > 15;
+
+    // Éléments actuellement affichés (pagination)
+    const displayedData = useMemo(() => {
+        return filteredAndSortedData.slice(0, displayCount);
+    }, [filteredAndSortedData, displayCount]);
+
+    const hasMore = displayCount < filteredAndSortedData.length;
+
+    // Réinitialiser le compteur quand les filtres/données changent
+    useEffect(() => {
+        setDisplayCount(20);
+    }, [filterChurches, filterEvents, searchQuery, sortBy, showMyParticipations, visibleChurches, visibleEvents]);
+
+    // Intersection Observer pour le scroll infini
+    useEffect(() => {
+        const loader = loaderRef.current;
+        if (!loader) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const first = entries[0];
+                if (first.isIntersecting && hasMore && !isLoadingMore) {
+                    setIsLoadingMore(true);
+                    // Simuler un petit délai pour l'effet visuel du loader
+                    setTimeout(() => {
+                        setDisplayCount(prev => Math.min(prev + 20, filteredAndSortedData.length));
+                        setIsLoadingMore(false);
+                    }, 300);
+                }
+            },
+            { threshold: 0.1, rootMargin: '100px' }
+        );
+
+        observer.observe(loader);
+        return () => observer.disconnect();
+    }, [hasMore, isLoadingMore, filteredAndSortedData.length]);
 
     const content = (
         <Box
@@ -867,9 +919,9 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
                         )}
                     </Box>
                 ) : (
-                    // Liste combinée
+                    // Liste combinée avec scroll infini
                     <List disablePadding>
-                        {filteredAndSortedData.map((item, index) => (
+                        {displayedData.map((item, index) => (
                             <React.Fragment key={`${item.type}-${item.data.id}`}>
                                 {item.type === 'church' ? (
                                     <ChurchCard
@@ -882,9 +934,38 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
                                         onClick={() => onEventClick(item.data as Event)}
                                     />
                                 )}
-                                {index < filteredAndSortedData.length - 1 && <Divider sx={{ borderColor: '#E8EAED' }} />}
+                                {index < displayedData.length - 1 && <Divider sx={{ borderColor: '#E8EAED' }} />}
                             </React.Fragment>
                         ))}
+
+                        {/* Loader pour le scroll infini */}
+                        {hasMore && (
+                            <Box
+                                ref={loaderRef}
+                                sx={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    py: 3,
+                                    gap: 1
+                                }}
+                            >
+                                <CircularProgress size={24} sx={{ color: '#1A73E8' }} />
+                                <Typography variant="caption" sx={{ color: '#5F6368' }}>
+                                    Chargement... ({displayedData.length}/{filteredAndSortedData.length})
+                                </Typography>
+                            </Box>
+                        )}
+
+                        {/* Message fin de liste */}
+                        {!hasMore && filteredAndSortedData.length > 20 && (
+                            <Box sx={{ textAlign: 'center', py: 2 }}>
+                                <Typography variant="caption" sx={{ color: '#80868B' }}>
+                                    Fin des résultats ({filteredAndSortedData.length} éléments)
+                                </Typography>
+                            </Box>
+                        )}
                     </List>
                 )}
             </Box>
