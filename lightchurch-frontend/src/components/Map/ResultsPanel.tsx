@@ -559,24 +559,24 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
             filteredItems = filteredItems.filter(item => item.type === 'event' && local[String(item.data.id)] !== undefined);
         }
 
-        // Tri
-        return filteredItems.sort((a, b) => {
+        // Limit for performance - only sort and show top 50
+        const top50 = filteredItems.sort((a, b) => {
             if (sortBy === 'distance') {
                 const distA = a.data.distance_km ?? Infinity;
                 const distB = b.data.distance_km ?? Infinity;
                 return distA - distB;
             } else {
-                // Tri par date uniquement pour les événements
                 if (a.type === 'event' && b.type === 'event') {
                     const dateA = new Date((a.data as Event).created_at || 0).getTime();
                     const dateB = new Date((b.data as Event).created_at || 0).getTime();
                     return dateB - dateA;
                 }
-                // Les églises vont après les événements en tri par date
                 return a.type === 'event' ? -1 : 1;
             }
-        });
-    }, [churches, events, filterChurches, filterEvents, searchQuery, sortBy]);
+        }).slice(0, 50);
+
+        return top50;
+    }, [churches, events, filterChurches, filterEvents, searchQuery, sortBy, showMyParticipations]);
 
     // Calculer le total avant filtre de recherche
     const totalBeforeSearch = useMemo(() => {

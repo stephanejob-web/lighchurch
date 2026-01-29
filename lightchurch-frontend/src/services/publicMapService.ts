@@ -51,6 +51,55 @@ interface FetchEventsParams {
 }
 
 /**
+ * Récupère les clusters pré-calculés côté serveur
+ * ULTRA-RAPIDE pour les vues à faible zoom
+ */
+export interface ServerCluster {
+    id: string;
+    lat: number;
+    lng: number;
+    count: number;
+    sampleName: string;
+    sampleId: number | null;
+}
+
+export const fetchServerClusters = async (params: {
+    north?: number;
+    south?: number;
+    east?: number;
+    west?: number;
+    zoom?: number;
+}): Promise<{ churchClusters: ServerCluster[]; eventClusters: ServerCluster[] }> => {
+    try {
+        const { data } = await api.get<{
+            success: boolean;
+            churchClusters: ServerCluster[];
+            eventClusters: ServerCluster[];
+        }>('/public/clusters', {
+            params: {
+                north: params.north,
+                south: params.south,
+                east: params.east,
+                west: params.west,
+                zoom: params.zoom
+            }
+        });
+
+        if (!data.success) {
+            throw new Error('Erreur lors du chargement des clusters');
+        }
+
+        return {
+            churchClusters: data.churchClusters || [],
+            eventClusters: data.eventClusters || []
+        };
+    } catch (error: any) {
+        console.error('Error fetching clusters:', error);
+        return { churchClusters: [], eventClusters: [] };
+    }
+};
+
+/**
  * Récupère uniquement les données minimales des églises pour l'affichage sur la carte
  * OPTIMISATION: ~70-80% de réduction des données vs fetchChurches
  * @throws Error si la requête échoue
@@ -351,8 +400,8 @@ export const fetchChurchesAndEvents = async (
 /**
  * Utilitaire : Formate la distance pour l'affichage
  */
-export const formatDistance = (distanceKm: number | null): string => {
-    if (distanceKm === null) return '';
+export const formatDistance = (distanceKm: number | null | undefined): string => {
+    if (distanceKm == null) return '';
 
     if (distanceKm < 1) {
         return `${Math.round(distanceKm * 1000)} m`;
