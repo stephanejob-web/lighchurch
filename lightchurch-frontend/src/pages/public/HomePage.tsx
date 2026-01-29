@@ -1045,7 +1045,8 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                 onEventClick={(e) => handleMarkerClick(e, 'event')}
                                 isGeolocated={!!userLocation} isMobileView={false}
                                 currentBounds={currentBounds}
-                                userLocation={userLocation} />
+                                userLocation={userLocation}
+                                embedded />
                         )}
                     </Box>
                 </Sidebar>
