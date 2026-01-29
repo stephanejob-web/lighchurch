@@ -7,6 +7,9 @@ export interface ClusterProperties {
     cluster_id?: number;
     point_count?: number;
     point_count_abbreviated?: string;
+    // Compteurs par type dans le cluster
+    churchCount?: number;
+    eventCount?: number;
     // Pour les points individuels
     itemId?: number;
     itemType?: 'church' | 'event';
@@ -42,16 +45,14 @@ export function useSupercluster(
     zoom: number,
     options: UseSuperclusterOptions = {}
 ) {
-    // Paramètres optimisés pour 10,000+ marqueurs
-    const { radius = 100, maxZoom = 18, minZoom = 0 } = options;
+    const { radius = 80, maxZoom = 18, minZoom = 0 } = options;
 
-    // Créer les index supercluster pour églises et événements
-    const churchIndexRef = useRef<Supercluster<ClusterProperties, ClusterProperties> | null>(null);
-    const eventIndexRef = useRef<Supercluster<ClusterProperties, ClusterProperties> | null>(null);
+    // Ref pour l'index combiné
+    const indexRef = useRef<Supercluster<ClusterProperties, ClusterProperties> | null>(null);
 
-    // Convertir les églises en GeoJSON features
-    const churchFeatures = useMemo((): ClusterPoint[] => {
-        return churches.map(church => ({
+    // Combiner églises et événements en un seul array de features
+    const combinedFeatures = useMemo((): ClusterPoint[] => {
+        const churchFeatures: ClusterPoint[] = churches.map(church => ({
             type: 'Feature' as const,
             geometry: {
                 type: 'Point' as const,
@@ -61,14 +62,13 @@ export function useSupercluster(
                 cluster: false,
                 itemId: church.id,
                 itemType: 'church' as const,
-                item: church
+                item: church,
+                churchCount: 1,
+                eventCount: 0
             }
         }));
-    }, [churches]);
 
-    // Convertir les événements en GeoJSON features
-    const eventFeatures = useMemo((): ClusterPoint[] => {
-        return events.map(event => ({
+        const eventFeatures: ClusterPoint[] = events.map(event => ({
             type: 'Feature' as const,
             geometry: {
                 type: 'Point' as const,
@@ -78,38 +78,40 @@ export function useSupercluster(
                 cluster: false,
                 itemId: event.id,
                 itemType: 'event' as const,
-                item: event
+                item: event,
+                churchCount: 0,
+                eventCount: 1
             }
         }));
-    }, [events]);
 
-    // Créer/mettre à jour l'index des églises
+        return [...churchFeatures, ...eventFeatures];
+    }, [churches, events]);
+
+    // Créer l'index Supercluster combiné avec map/reduce pour agréger les compteurs
     useMemo(() => {
-        const index = new Supercluster<ClusterProperties, ClusterProperties>({
+        const index = new Supercluster({
             radius,
             maxZoom,
             minZoom,
-            minPoints: 2, // Force clustering dès 2 points
+            minPoints: 2,
+            // Map: extraire les propriétés de chaque point pour l'agrégation
+            map: (props: any) => ({
+                churchCount: props.churchCount || 0,
+                eventCount: props.eventCount || 0
+            }),
+            // Reduce: agréger les compteurs lors du clustering
+            reduce: (accumulated: any, props: any) => {
+                accumulated.churchCount = (accumulated.churchCount || 0) + (props.churchCount || 0);
+                accumulated.eventCount = (accumulated.eventCount || 0) + (props.eventCount || 0);
+            }
         });
-        index.load(churchFeatures as any);
-        churchIndexRef.current = index;
-    }, [churchFeatures, radius, maxZoom, minZoom]);
+        index.load(combinedFeatures as any);
+        indexRef.current = index as any;
+    }, [combinedFeatures, radius, maxZoom, minZoom]);
 
-    // Créer/mettre à jour l'index des événements
-    useMemo(() => {
-        const index = new Supercluster<ClusterProperties, ClusterProperties>({
-            radius,
-            maxZoom,
-            minZoom,
-            minPoints: 2, // Force clustering dès 2 points
-        });
-        index.load(eventFeatures as any);
-        eventIndexRef.current = index;
-    }, [eventFeatures, radius, maxZoom, minZoom]);
-
-    // Récupérer les clusters visibles pour les églises
-    const churchClusters = useMemo(() => {
-        if (!churchIndexRef.current || !bounds) return [];
+    // Récupérer les clusters visibles
+    const clusters = useMemo(() => {
+        if (!indexRef.current || !bounds) return [];
 
         const bbox: [number, number, number, number] = [
             bounds.west,
@@ -119,47 +121,26 @@ export function useSupercluster(
         ];
 
         try {
-            return churchIndexRef.current.getClusters(bbox, Math.floor(zoom));
+            return indexRef.current.getClusters(bbox, Math.floor(zoom));
         } catch (e) {
-            console.error('Error getting church clusters:', e);
+            console.error('Error getting clusters:', e);
             return [];
         }
-    }, [bounds, zoom, churchFeatures]);
+    }, [bounds, zoom, combinedFeatures]);
 
-    // Récupérer les clusters visibles pour les événements
-    const eventClusters = useMemo(() => {
-        if (!eventIndexRef.current || !bounds) return [];
-
-        const bbox: [number, number, number, number] = [
-            bounds.west,
-            bounds.south,
-            bounds.east,
-            bounds.north
-        ];
+    // Fonction pour obtenir le zoom d'expansion d'un cluster
+    const getClusterExpansionZoom = useCallback((clusterId: number) => {
+        if (!indexRef.current) return zoom + 1;
 
         try {
-            return eventIndexRef.current.getClusters(bbox, Math.floor(zoom));
-        } catch (e) {
-            console.error('Error getting event clusters:', e);
-            return [];
-        }
-    }, [bounds, zoom, eventFeatures]);
-
-    // Fonction pour obtenir les enfants d'un cluster
-    const getClusterExpansionZoom = useCallback((clusterId: number, type: 'church' | 'event') => {
-        const index = type === 'church' ? churchIndexRef.current : eventIndexRef.current;
-        if (!index) return zoom + 1;
-
-        try {
-            return index.getClusterExpansionZoom(clusterId);
+            return indexRef.current.getClusterExpansionZoom(clusterId);
         } catch (e) {
             return zoom + 1;
         }
     }, [zoom]);
 
     return {
-        churchClusters,
-        eventClusters,
+        clusters,
         getClusterExpansionZoom,
         totalChurches: churches.length,
         totalEvents: events.length
