@@ -525,9 +525,13 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                 };
 
                 if (currentZoom < 10) {
+                    // À faible zoom: récupérer clusters serveur pour la carte + données individuelles pour le ResultsPanel
                     const { fetchServerClusters } = await import('../../services/publicMapService');
-                    const clusters = await fetchServerClusters({ ...paddedBounds, zoom: currentZoom });
-                    
+                    const [clusters, markersData] = await Promise.all([
+                        fetchServerClusters({ ...paddedBounds, zoom: currentZoom }),
+                        fetchChurchesAndEventsMarkers({ ...paddedBounds, limit: 5000 })
+                    ]);
+
                     if (cancelled) return;
 
                     const formatCluster = (c: any, type: 'church' | 'event') => ({
@@ -543,8 +547,8 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                     });
 
                     setDataState({
-                        churches: [], 
-                        events: [],
+                        churches: markersData.churches || [],
+                        events: markersData.events || [],
                         serverClusters: {
                             churchClusters: (clusters.churchClusters || []).map(c => formatCluster(c, 'church')),
                             eventClusters: (clusters.eventClusters || []).map(c => formatCluster(c, 'event'))
@@ -553,7 +557,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                     });
                 } else {
                     const data = await fetchChurchesAndEventsMarkers({ ...paddedBounds, limit: 5000 });
-                    
+
                     if (cancelled) return;
 
                     setDataState({
@@ -722,7 +726,8 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                         onChurchClick={(c) => handleMarkerClick(c, 'church')}
                                         onEventClick={(e) => handleMarkerClick(e, 'event')}
                                         onClose={() => setResultsPanelOpen(false)} open={resultsPanelOpen}
-                                        isGeolocated={!!userLocation} isMobileView />
+                                        isGeolocated={!!userLocation} isMobileView
+                                        currentBounds={currentBounds} />
                                 )}
                             </Box>
                         </Box>
@@ -757,7 +762,8 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                             <ResultsPanel churches={churches} events={events} loading={loading}
                                 onChurchClick={(c) => handleMarkerClick(c, 'church')}
                                 onEventClick={(e) => handleMarkerClick(e, 'event')}
-                                isGeolocated={!!userLocation} isMobileView={false} />
+                                isGeolocated={!!userLocation} isMobileView={false}
+                                currentBounds={currentBounds} />
                         )}
                     </Box>
                 </Sidebar>
