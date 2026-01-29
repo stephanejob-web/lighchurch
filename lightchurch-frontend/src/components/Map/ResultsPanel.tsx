@@ -31,6 +31,13 @@ import { formatDistance } from '../../services/publicMapService';
 
 type SortType = 'distance' | 'date';
 
+interface MapBounds {
+    north: number;
+    south: number;
+    east: number;
+    west: number;
+}
+
 interface ResultsPanelProps {
     churches: Church[];
     events: Event[];
@@ -41,6 +48,7 @@ interface ResultsPanelProps {
     open?: boolean;
     isGeolocated?: boolean;
     isMobileView?: boolean;
+    currentBounds?: MapBounds | null;
 }
 
 /**
@@ -465,7 +473,8 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
     onChurchClick,
     onEventClick,
     onClose,
-    open = true
+    open = true,
+    currentBounds
 }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -510,16 +519,36 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
         setFilterChurches(false);
     }, []);
 
+    // Helper pour vérifier si un point est dans les bounds visibles
+    const isInBounds = useCallback((lat: number, lng: number): boolean => {
+        if (!currentBounds) return true;
+        return (
+            lat >= currentBounds.south &&
+            lat <= currentBounds.north &&
+            lng >= currentBounds.west &&
+            lng <= currentBounds.east
+        );
+    }, [currentBounds]);
+
+    // Filtrer les données par ce qui est visible sur la carte
+    const visibleChurches = useMemo(() => {
+        return churches.filter(c => isInBounds(c.latitude, c.longitude));
+    }, [churches, isInBounds]);
+
+    const visibleEvents = useMemo(() => {
+        return events.filter(e => isInBounds(e.latitude, e.longitude));
+    }, [events, isInBounds]);
+
     // Filtrer et trier les données
     const filteredAndSortedData = useMemo(() => {
         const items: Array<{ type: 'church' | 'event'; data: Church | Event }> = [];
 
         if (filterChurches) {
-            churches.forEach(church => items.push({ type: 'church', data: church }));
+            visibleChurches.forEach(church => items.push({ type: 'church', data: church }));
         }
 
         if (filterEvents) {
-            events.forEach(event => items.push({ type: 'event', data: event }));
+            visibleEvents.forEach(event => items.push({ type: 'event', data: event }));
         }
 
         // Filtrage par recherche
@@ -578,13 +607,13 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
         return top50;
     }, [churches, events, filterChurches, filterEvents, searchQuery, sortBy, showMyParticipations]);
 
-    // Calculer le total avant filtre de recherche
+    // Calculer le total avant filtre de recherche (basé sur les éléments visibles)
     const totalBeforeSearch = useMemo(() => {
         let count = 0;
-        if (filterChurches) count += churches.length;
-        if (filterEvents) count += events.length;
+        if (filterChurches) count += visibleChurches.length;
+        if (filterEvents) count += visibleEvents.length;
         return count;
-    }, [churches.length, events.length, filterChurches, filterEvents]);
+    }, [visibleChurches.length, visibleEvents.length, filterChurches, filterEvents]);
 
     const showSearchBar = totalBeforeSearch > 15;
 
@@ -680,7 +709,7 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
                     {/* Églises */}
                     <Chip
                         icon={filterChurches ? <CheckIcon sx={{ fontSize: 16 }} /> : undefined}
-                        label={`Églises (${churches.length})`}
+                        label={`Églises (${visibleChurches.length})`}
                         onClick={handleToggleChurches}
                         sx={{
                             bgcolor: '#FFFFFF',
@@ -703,7 +732,7 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
                     {/* Événements */}
                     <Chip
                         icon={filterEvents ? <CheckIcon sx={{ fontSize: 16 }} /> : undefined}
-                        label={`Événements (${events.length})`}
+                        label={`Événements (${visibleEvents.length})`}
                         onClick={handleToggleEvents}
                         sx={{
                             bgcolor: '#FFFFFF',
