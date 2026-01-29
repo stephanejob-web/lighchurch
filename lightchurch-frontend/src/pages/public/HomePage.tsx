@@ -857,7 +857,13 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
         setCurrentZoom(zoom);
     }, []);
 
+    // ========== DRAWER HISTORY ==========
+    const [drawerHistory, setDrawerHistory] = useState<Array<{ item: any, type: 'church' | 'event' }>>([]);
+
     const handleMarkerClick = useCallback(async (item: any, type: 'church' | 'event') => {
+        // Reset history when clicking a new marker from map
+        setDrawerHistory([]);
+        
         setSelectedType(type);
         setDetailDrawerOpen(true);
         // Important: Use item.latitude/longitude directly
@@ -893,9 +899,29 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
     }, [getClusterExpansionZoom, currentZoom]);
 
     const handleCloseDrawer = useCallback(() => {
+        if (drawerHistory.length > 0) {
+            // Go back in history
+            const newHistory = [...drawerHistory];
+            const previous = newHistory.pop();
+            setDrawerHistory(newHistory);
+            
+            if (previous) {
+                setSelectedItem(previous.item);
+                setSelectedType(previous.type);
+                // Optionally re-center map if needed, but maybe better to leave user where they are
+                // or fly back to event location? Let's stay simple for now.
+                if (previous.item.latitude && previous.item.longitude) {
+                     mapInstance?.flyTo([previous.item.latitude, previous.item.longitude], 16, { duration: 0.5 });
+                }
+                return;
+            }
+        }
+        
+        // Normal close
         setDetailDrawerOpen(false);
         setSelectedItem(null);
-    }, []);
+        setDrawerHistory([]);
+    }, [drawerHistory, mapInstance]);
 
     const handleLocationSelect = useCallback((lat: number, lng: number) => {
         // Sauvegarder la position actuelle avant de se déplacer
@@ -987,10 +1013,28 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                     <DetailDrawer open={detailDrawerOpen} onClose={handleCloseDrawer} loading={!selectedItem}
                         data={selectedItem} type={selectedType}
                         onOrganizerClick={async (id) => {
+                            // Save current event to history before switching
+                            if (selectedItem && selectedType) {
+                                setDrawerHistory(prev => [...prev, { item: selectedItem, type: selectedType }]);
+                            }
+
                             // D'abord chercher dans les églises locales
                             const c = churches.find(c => String(c.id) === String(id));
                             if (c) {
-                                handleMarkerClick(c, 'church');
+                                // Direct switch without clearing history (handleMarkerClick clears it, so we can't use it directly)
+                                // We need to duplicate the logic of handleMarkerClick BUT WITHOUT clearing history
+                                setSelectedType('church');
+                                // setDetailDrawerOpen(true); // Already open
+                                setMapCenter([c.latitude, c.longitude]);
+                                setMapZoom(16);
+                                
+                                try {
+                                    const { fetchChurchDetails } = await import('../../services/publicMapService');
+                                    const details = await fetchChurchDetails(c.id);
+                                    setSelectedItem(details);
+                                } catch (err) {
+                                    setSelectedItem(c);
+                                }
                             } else {
                                 // Si non trouvée, récupérer depuis l'API et centrer la carte
                                 try {
@@ -1019,10 +1063,26 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                             <DetailDrawer embedded open onClose={handleCloseDrawer} loading={!selectedItem}
                                 data={selectedItem} type={selectedType}
                                 onOrganizerClick={async (id) => {
+                                    // Save current event to history before switching
+                                    if (selectedItem && selectedType) {
+                                        setDrawerHistory(prev => [...prev, { item: selectedItem, type: selectedType }]);
+                                    }
+
                                     // D'abord chercher dans les églises locales
                                     const c = churches.find(c => String(c.id) === String(id));
                                     if (c) {
-                                        handleMarkerClick(c, 'church');
+                                        // Direct switch logic (without clearing history)
+                                        setSelectedType('church');
+                                        setMapCenter([c.latitude, c.longitude]);
+                                        setMapZoom(16);
+                                        
+                                        try {
+                                            const { fetchChurchDetails } = await import('../../services/publicMapService');
+                                            const details = await fetchChurchDetails(c.id);
+                                            setSelectedItem(details);
+                                        } catch (err) {
+                                            setSelectedItem(c);
+                                        }
                                     } else {
                                         // Si non trouvée, récupérer depuis l'API et centrer la carte
                                         try {
