@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     Box,
-    Paper,
     useMediaQuery,
     useTheme,
     LinearProgress,
@@ -343,6 +342,15 @@ const BoundsTracker: React.FC<BoundsTrackerProps> = React.memo(({ onBoundsChange
     return null;
 });
 
+// Capture map reference for external controls
+const MapRefCapture: React.FC<{ onMapReady: (map: L.Map) => void }> = ({ onMapReady }) => {
+    const map = useMap();
+    useEffect(() => {
+        onMapReady(map);
+    }, [map, onMapReady]);
+    return null;
+};
+
 const UserMarker: React.FC<{ position: [number, number] }> = React.memo(({ position }) => {
     const map = useMap();
     const markerRef = useRef<L.Marker | null>(null);
@@ -374,32 +382,36 @@ const UserMarker: React.FC<{ position: [number, number] }> = React.memo(({ posit
     return null;
 });
 
-const ZoomControls: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
-    const map = useMap();
+const ZoomControls: React.FC<{ mapRef: L.Map | null }> = ({ mapRef }) => {
     return (
         <Box sx={{
-            position: 'absolute', bottom: 24, left: isMobile ? 24 : 440,
-            display: 'flex', flexDirection: 'column', zIndex: 1000,
-            borderRadius: 2, overflow: 'hidden', boxShadow: 2,
+            display: 'flex', flexDirection: 'column',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+            borderRadius: 1,
+            overflow: 'hidden',
         }}>
-            <Tooltip title="Zoom +" placement="right">
-                <Paper elevation={0} sx={{
+            <Box
+                sx={{
                     bgcolor: 'white', width: 40, height: 40,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: 'pointer', borderBottom: '1px solid #E0E0E0', '&:hover': { bgcolor: '#F5F5F5' }
-                }} onClick={() => map.zoomIn()}>
-                    <AddIcon sx={{ color: '#666' }} />
-                </Paper>
-            </Tooltip>
-            <Tooltip title="Zoom -" placement="right">
-                <Paper elevation={0} sx={{
+                    cursor: 'pointer', borderBottom: '1px solid #E6E6E6',
+                    '&:hover': { bgcolor: '#F8F8F8' }
+                }}
+                onClick={() => mapRef?.zoomIn()}
+            >
+                <AddIcon sx={{ color: '#666' }} />
+            </Box>
+            <Box
+                sx={{
                     bgcolor: 'white', width: 40, height: 40,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: 'pointer', '&:hover': { bgcolor: '#F5F5F5' }
-                }} onClick={() => map.zoomOut()}>
-                    <RemoveIcon sx={{ color: '#666' }} />
-                </Paper>
-            </Tooltip>
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: '#F8F8F8' }
+                }}
+                onClick={() => mapRef?.zoomOut()}
+            >
+                <RemoveIcon sx={{ color: '#666' }} />
+            </Box>
         </Box>
     );
 };
@@ -415,6 +427,9 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const navigate = useNavigate();
+
+    // ========== MAP REFERENCE ==========
+    const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
 
     // ========== DATA STATE ==========
     const [loading, setLoading] = useState(false);
@@ -759,7 +774,8 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
 
                 <MapCenter center={mapCenter} zoom={mapZoom} />
                 <BoundsTracker onBoundsChange={handleBoundsChange} />
-                <ZoomControls isMobile={isMobile} />
+                <MapRefCapture onMapReady={setMapInstance} />
+
 
                 {userLocation && <UserMarker position={[userLocation.latitude, userLocation.longitude]} />}
 
@@ -776,12 +792,12 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                 />
             </MapContainer>
 
-            <Box sx={{ position: 'absolute', bottom: 24, right: 24, display: 'flex', alignItems: 'flex-end', gap: 2, zIndex: 1000 }}>
+            <Box sx={{ position: 'absolute', bottom: 24, right: 24, display: 'flex', alignItems: 'flex-end', gap: 1.5, zIndex: 1000 }}>
                 {/* 1. Layer Switcher (Sitting to the left) */}
                 <Box
                     onClick={() => setMapType(mapType === 'satellite' ? 'standard' : 'satellite')}
                     sx={{
-                        width: 64, // Slightly larger for "Google" feel
+                        width: 64, // Standard GMaps size for large toggle
                         height: 64,
                         borderRadius: 2,
                         cursor: 'pointer',
@@ -806,6 +822,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                             backgroundSize: '10px 10px'
                         }} />
                     )}
+                    
                     <Box sx={{
                         position: 'absolute', bottom: 0, left: 0, right: 0,
                         bgcolor: 'rgba(0,0,0,0.6)', color: 'white',
@@ -816,39 +833,51 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                     </Box>
                 </Box>
 
-                {/* 2. Action Buttons Stack (Home, Participations, Location) */}
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                {/* 2. Action Buttons Stack (Right) - Google Maps Style */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center' }}>
+                    
+                    {/* My Location - Square Button */}
                     {userLocation && (
                         <Tooltip title="Ma position" placement="left">
-                            <Paper elevation={2} sx={{ 
-                                bgcolor: 'white', borderRadius: '50%', width: 44, height: 44, 
+                            <Box sx={{ 
+                                bgcolor: 'white', width: 40, height: 40, borderRadius: 1,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                                color: '#666', '&:hover': { color: '#1A73E8' } 
+                                boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+                                '&:hover': { bgcolor: '#F8F8F8' } 
                             }} onClick={handleRecenter}>
-                                <MyLocationIcon />
-                            </Paper>
+                                <MyLocationIcon sx={{ color: '#666' }} />
+                            </Box>
                         </Tooltip>
                     )}
 
+                    {/* Zoom Controls - Stacked Square Buttons */}
+                    <Box sx={{ my: 0.5 }}>
+                        <ZoomControls mapRef={mapInstance} />
+                    </Box>
+
+                    {/* Other Actions - Square Buttons */}
                     <Tooltip title="Mes participations" placement="left">
-                        <Paper elevation={2} sx={{ 
-                            bgcolor: 'white', borderRadius: '50%', width: 44, height: 44, 
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' 
+                        <Box sx={{ 
+                            bgcolor: 'white', width: 40, height: 40, borderRadius: 1,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                            boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+                            '&:hover': { bgcolor: '#F8F8F8' }
                         }} onClick={() => navigate('/my-participations')}>
                             <Badge badgeContent={participations.size} color="error" max={99}>
                                 <EventIcon sx={{ color: participations.size > 0 ? '#EA4335' : '#666' }} />
                             </Badge>
-                        </Paper>
+                        </Box>
                     </Tooltip>
 
                     <Tooltip title="Accueil" placement="left">
-                        <Paper elevation={2} sx={{ 
-                            bgcolor: 'white', borderRadius: '50%', width: 44, height: 44, 
+                        <Box sx={{ 
+                            bgcolor: 'white', width: 40, height: 40, borderRadius: 1,
                             display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                            color: '#666', '&:hover': { color: '#1A73E8' }
+                            boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+                            '&:hover': { bgcolor: '#F8F8F8' }
                         }} onClick={() => navigate('/')}>
-                            <HomeIcon />
-                        </Paper>
+                            <HomeIcon sx={{ color: '#666' }} />
+                        </Box>
                     </Tooltip>
                 </Box>
             </Box>
