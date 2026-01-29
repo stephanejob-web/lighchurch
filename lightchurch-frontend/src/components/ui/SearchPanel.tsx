@@ -208,43 +208,36 @@ const SearchPanel: React.FC<SearchPanelProps & { embedded?: boolean }> = ({ onSe
                 </Paper>
             )}
 
-            {/* Filter Chips - Only show in SearchPanel if NOT embedded and NOT hidden
-               Actually, in Google Maps, filters are often under the search box.
-               Let's keep them here but style them fittingly.
+            {/* Filter Chips - Google Maps Style (Pills)
             */}
-            {!embedded && !hideFilters && (
+            {!hideFilters && (
                 <Stack 
                     direction="row" 
                     spacing={1}
                     sx={{
-                        mt: 0.5,
-                        overflowX: 'auto',
-                        pb: 0.5, // Space for scrollbar if any (though hidden)
-                        px: 0.5, // Padding for box shadow visibility
-                        // Hide scrollbar
-                        '&::-webkit-scrollbar': { display: 'none' },
-                        scrollbarWidth: 'none',
-                        '-ms-overflow-style': 'none',
+                        mt: 1,
+                        px: embedded ? 0 : 0.5,
+                        pb: 0.5,
                         width: '100%',
-                        flexShrink: 0
+                        flexWrap: 'wrap',
+                        gap: 1
                     }}
                 >
                     <Chip
                         icon={<Church />}
                         label="Églises"
                         clickable
-                        color={showChurches ? 'primary' : 'default'}
-                        variant={showChurches ? 'filled' : 'outlined'}
                         onClick={handleToggleChurches}
                         sx={{
-                            backgroundColor: showChurches ? '#4285F4' : '#FFFFFF',
-                            color: showChurches ? '#FFFFFF' : '#3C4043',
+                            backgroundColor: showChurches ? '#E8F0FE' : '#FFFFFF',
+                            color: showChurches ? '#1967D2' : '#3C4043',
                             fontWeight: 500,
-                            borderColor: showChurches ? 'transparent' : '#DADCE0',
-                            boxShadow: '0 1px 2px rgba(60,64,67,0.3)',
-                            flexShrink: 0,
+                            border: `1px solid ${showChurches ? '#E8F0FE' : '#DADCE0'}`,
+                            boxShadow: 'none',
+                            height: 32,
+                            borderRadius: '16px',
                             '&:hover': {
-                                backgroundColor: showChurches ? '#3367D6' : '#F8F9FA',
+                                backgroundColor: showChurches ? '#D2E3FC' : '#F1F3F4',
                             }
                         }}
                     />
@@ -252,18 +245,17 @@ const SearchPanel: React.FC<SearchPanelProps & { embedded?: boolean }> = ({ onSe
                         icon={<CalendarMonth />}
                         label="Événements"
                         clickable
-                        color={showEvents ? 'secondary' : 'default'}
-                        variant={showEvents ? 'filled' : 'outlined'}
                         onClick={handleToggleEvents}
                         sx={{
-                            backgroundColor: showEvents ? '#EA4335' : '#FFFFFF',
-                            color: showEvents ? '#FFFFFF' : '#3C4043',
+                            backgroundColor: showEvents ? '#FCE8E6' : '#FFFFFF',
+                            color: showEvents ? '#C5221F' : '#3C4043',
                             fontWeight: 500,
-                            borderColor: showEvents ? 'transparent' : '#DADCE0',
-                            boxShadow: '0 1px 2px rgba(60,64,67,0.3)',
-                            flexShrink: 0,
+                            border: `1px solid ${showEvents ? '#FCE8E6' : '#DADCE0'}`,
+                            boxShadow: 'none',
+                            height: 32,
+                            borderRadius: '16px',
                             '&:hover': {
-                                backgroundColor: showEvents ? '#C5221F' : '#F8F9FA',
+                                backgroundColor: showEvents ? '#FAD2CF' : '#F1F3F4',
                             }
                         }}
                     />

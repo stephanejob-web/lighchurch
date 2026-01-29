@@ -51,6 +51,7 @@ interface ResultsPanelProps {
     isMobileView?: boolean;
     currentBounds?: MapBounds | null;
     userLocation?: UserLocation | null;
+    embedded?: boolean;
 }
 
 const PAGE_SIZE = 20;
@@ -276,7 +277,8 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
     onClose,
     open = true,
     currentBounds,
-    userLocation
+    userLocation,
+    embedded
 }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -636,6 +638,10 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
                 {content}
             </Drawer>
         );
+    }
+
+    if (embedded) {
+        return content;
     }
 
     return (
