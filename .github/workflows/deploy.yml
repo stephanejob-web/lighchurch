@@ -19,18 +19,11 @@ jobs:
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
-        env:
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
-          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
-          MYSQL_USER: ${{ secrets.MYSQL_USER }}
-          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 2222
-          envs: MYSQL_ROOT_PASSWORD,MYSQL_DATABASE,MYSQL_USER,MYSQL_PASSWORD,JWT_SECRET
           script: |
             set -e
 
@@ -48,11 +41,20 @@ jobs:
             echo "⬇️ Pull du code..."
             git pull origin main
 
-            echo "🔧 Création du fichier .env..."
-            printf "MYSQL_ROOT_PASSWORD=%s\nMYSQL_DATABASE=%s\nMYSQL_USER=%s\nMYSQL_PASSWORD=%s\nJWT_SECRET=%s\n" \
-              "$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" "$MYSQL_USER" "$MYSQL_PASSWORD" "$JWT_SECRET" > .env
-            echo "Contenu du .env:"
-            cat .env
+            # Préserver le .env existant (ne pas écraser les secrets manuels)
+            if [ ! -f .env ]; then
+              echo "🔧 Création du fichier .env (premier déploiement)..."
+              echo "⚠️  IMPORTANT: Remplissez manuellement le .env sur le serveur avec vos secrets"
+              cat > .env << 'ENVEOF'
+MYSQL_ROOT_PASSWORD=
+MYSQL_DATABASE=lightchurch
+MYSQL_USER=
+MYSQL_PASSWORD=
+JWT_SECRET=
+ENVEOF
+            else
+              echo "✅ Fichier .env existant préservé"
+            fi
 
             echo "🔨 Build des images (backend + frontend uniquement)..."
             docker compose build --no-cache backend frontend
