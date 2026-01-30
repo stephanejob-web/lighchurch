@@ -10,6 +10,32 @@ body {
   box-sizing: border-box;
 }
 
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
 #root {
-  min-height: 100vh;
+  height: 100%;
+  overflow: auto;
+}
+
+/* Vaul Bottom Sheet */
+[vaul-drawer] {
+  touch-action: none;
+  transform: translate3d(0, 100%, 0);
+  transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+[vaul-drawer][vaul-drawer-visible="true"] {
+  transform: translate3d(0, 0, 0);
+}
+
+[vaul-overlay] {
+  opacity: 0;
+  transition: opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+[vaul-overlay][vaul-drawer-visible="true"] {
+  opacity: 1;
 }

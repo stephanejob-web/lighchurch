@@ -23,21 +23,42 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 2222
           script: |
             set -e
 
             echo "📦 Déploiement LightChurch..."
+
+            # Clone le repo s'il n'existe pas, sinon pull
+            if [ ! -d ~/apps/lightchurch ]; then
+              echo "🆕 Premier déploiement - Clonage du repo..."
+              mkdir -p ~/apps
+              git clone https://github.com/${{ github.repository }}.git ~/apps/lightchurch
+            fi
 
             cd ~/apps/lightchurch
 
             echo "⬇️ Pull du code..."
             git pull origin main
 
-            echo "🔨 Build des images..."
-            docker compose build --no-cache
+            # Préserver le .env existant (ne pas écraser les secrets manuels)
+            if [ ! -f .env ]; then
+              echo "🔧 Création du fichier .env (premier déploiement)..."
+              echo "⚠️  IMPORTANT: Remplissez manuellement le .env sur le serveur avec vos secrets"
+              printf 'MYSQL_ROOT_PASSWORD=\nMYSQL_DATABASE=lightchurch\nMYSQL_USER=\nMYSQL_PASSWORD=\nJWT_SECRET=\n' > .env
+            else
+              echo "✅ Fichier .env existant préservé"
+            fi
 
-            echo "🔄 Redémarrage des conteneurs..."
-            docker compose down
+            echo "🔨 Build des images (backend + frontend uniquement)..."
+            docker compose build --no-cache backend frontend
+
+            echo "🔄 Redémarrage des conteneurs (MySQL préservé)..."
+            # Arrêter et supprimer uniquement backend et frontend, PAS MySQL
+            docker compose stop backend frontend 2>/dev/null || true
+            docker compose rm -f backend frontend 2>/dev/null || true
+
+            # Démarrer tous les services (MySQL sera créé seulement s'il n'existe pas)
             docker compose up -d
 
             echo "🧹 Nettoyage..."

@@ -5,6 +5,7 @@ import type { ChurchDetails, EventDetails } from '../../types/publicMap';
 import useEventInterestWeb from '../../hooks/useEventInterestWeb';
 import TikTokIcon from '../icons/TikTokIcon';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Drawer as VaulDrawer } from 'vaul';
 
 interface DetailDrawerProps {
     open: boolean;
@@ -581,27 +582,6 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
                 style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
             >
                 <Box>
-            {/* Visual Handle for Bottom Sheet on Mobile */}
-            {isMobile && (
-                <Box sx={{ 
-                    position: 'sticky', 
-                    top: 0, 
-                    zIndex: 10, 
-                    bgcolor: 'white', 
-                    pt: 1.5, 
-                    pb: 1, 
-                    display: 'flex', 
-                    justifyContent: 'center',
-                    borderBottom: '1px solid transparent' // Placeholder
-                }}>
-                    <Box sx={{ 
-                        width: 40, 
-                        height: 4, 
-                        bgcolor: '#DADCE0', 
-                        borderRadius: 2 
-                    }} />
-                </Box>
-            )}
 
             {(() => {
                 // Determine current data and type logic
@@ -681,27 +661,84 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
         );
     }
 
+    // Mobile: Use Vaul for native-like bottom sheet with swipe to close
+    console.log('DetailDrawer - isMobile:', isMobile, 'open:', open);
+    if (isMobile) {
+        return (
+            <VaulDrawer.Root open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+                <VaulDrawer.Portal>
+                    <VaulDrawer.Overlay
+                        style={{
+                            position: 'fixed',
+                            inset: 0,
+                            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                            zIndex: 2199
+                        }}
+                    />
+                    <VaulDrawer.Content
+                        style={{
+                            position: 'fixed',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            maxHeight: '85vh',
+                            backgroundColor: '#FFFFFF',
+                            borderTopLeftRadius: 16,
+                            borderTopRightRadius: 16,
+                            zIndex: 2200,
+                            outline: 'none',
+                            display: 'flex',
+                            flexDirection: 'column'
+                        }}
+                        aria-describedby={undefined}
+                    >
+                        {/* Accessibility: Hidden title for screen readers */}
+                        <VaulDrawer.Title style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}>
+                            {type === 'event' ? 'Détails de l\'événement' : 'Détails de l\'église'}
+                        </VaulDrawer.Title>
+                        {/* Handle for swipe */}
+                        <Box sx={{
+                            pt: 'max(12px, env(safe-area-inset-top, 12px))',
+                            pb: 1,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                            bgcolor: '#FFFFFF'
+                        }}>
+                            <Box sx={{
+                                width: 40,
+                                height: 5,
+                                bgcolor: '#DADCE0',
+                                borderRadius: 2.5
+                            }} />
+                        </Box>
+                        <Box sx={{ overflowY: 'auto', flex: 1, pb: 'max(24px, env(safe-area-inset-bottom, 24px))' }}>
+                            {innerContent}
+                        </Box>
+                    </VaulDrawer.Content>
+                </VaulDrawer.Portal>
+            </VaulDrawer.Root>
+        );
+    }
+
+    // Desktop: Use MUI Drawer
     return (
         <Drawer
-            anchor={isMobile ? 'bottom' : 'left'}
+            anchor="left"
             open={open}
             onClose={handleClose}
             variant="persistent"
-            PaperProps={{
-                sx: {
-                    width: isMobile ? '100%' : 400,
-                    // Mobile: Max height 85% of screen, rounded top corners
-                    height: isMobile ? '85vh' : '100%',
-                    maxHeight: isMobile ? '85vh' : '100%',
-                    top: isMobile ? 'auto' : 0,
-                    bottom: 0,
-                    borderTopLeftRadius: isMobile ? 16 : 0,
-                    borderTopRightRadius: isMobile ? 16 : 0,
-                    boxShadow: '0 1px 2px 0 rgba(60,64,67,0.3), 0 2px 6px 2px rgba(60,64,67,0.15)',
-                    borderRight: isMobile ? 'none' : 'none', // Removed border generally
-                    zIndex: 2200, 
-                    bgcolor: '#FFFFFF',
-                    pb: isMobile ? 3 : 0 // Safe area for mobile
+            slotProps={{
+                paper: {
+                    sx: {
+                        width: 400,
+                        height: '100%',
+                        top: 0,
+                        bottom: 0,
+                        boxShadow: '0 1px 2px 0 rgba(60,64,67,0.3), 0 2px 6px 2px rgba(60,64,67,0.15)',
+                        zIndex: 2200,
+                        bgcolor: '#FFFFFF'
+                    }
                 }
             }}
         >

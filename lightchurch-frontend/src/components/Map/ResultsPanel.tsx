@@ -7,7 +7,6 @@ import {
     Divider,
     Stack,
     IconButton,
-    Drawer,
     useMediaQuery,
     useTheme,
     Chip,
@@ -15,6 +14,7 @@ import {
     InputBase,
     CircularProgress
 } from '@mui/material';
+import { Drawer as VaulDrawer } from 'vaul';
 import {
     Close as CloseIcon,
     AccountBalance as AccountBalanceIcon,
@@ -225,13 +225,17 @@ const EventCard: React.FC<{ event: Event; onClick: () => void }> = React.memo(({
                         {smartTimeDisplay.text}
                     </Typography>
                 )}
-                <Typography variant="body2" sx={{ color: '#5F6368', fontSize: '0.875rem' }}>
-                    {event.event_city} • {event.church_name}
-                </Typography>
-                <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
-                    <Typography variant="caption" sx={{ color: '#5F6368', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <PlaceIcon sx={{ fontSize: 14 }} /> {formatDistance(event.distance_km)}
+                {(event.event_city || event.church_name) && (
+                    <Typography variant="body2" sx={{ color: '#5F6368', fontSize: '0.875rem' }}>
+                        {[event.event_city, event.church_name].filter(Boolean).join(' • ')}
                     </Typography>
+                )}
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
+                    {event.distance_km !== undefined && event.distance_km !== null && (
+                        <Typography variant="caption" sx={{ color: '#5F6368', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <PlaceIcon sx={{ fontSize: 14 }} /> {formatDistance(event.distance_km)}
+                        </Typography>
+                    )}
                     {((localInterestedCount ?? event.interested_count) !== undefined && (localInterestedCount ?? event.interested_count)! > 0) && (
                         <Typography variant="caption" sx={{ color: '#5F6368', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                             <CheckIcon sx={{ fontSize: 14 }} /> {localInterestedCount ?? event.interested_count} participations
@@ -543,7 +547,7 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
 
             {/* Filtres */}
             <Box sx={{ position: 'sticky', top: 0, bgcolor: '#FFFFFF', zIndex: 10, borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-                <Stack direction="row" spacing={1} useFlexGap sx={{ px: 2, py: 1, flexWrap: 'wrap' }}>
+                <Stack direction="row" spacing={1} sx={{ px: 2, py: 1, flexWrap: 'nowrap' }}>
                     <Chip
                         icon={filterChurches ? <CheckIcon sx={{ fontSize: 16 }} /> : undefined}
                         label={`Églises (${churches.length}${hasMoreChurches ? '+' : ''})`}
@@ -628,15 +632,56 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
 
     if (isMobile) {
         return (
-            <Drawer
-                anchor="bottom" open={open} onClose={onClose}
-                sx={{ '& .MuiDrawer-paper': { height: '90vh', borderTopLeftRadius: 16, borderTopRightRadius: 16, bgcolor: '#FFFFFF' } }}
-            >
-                <Box sx={{ position: 'sticky', top: 0, bgcolor: '#FFFFFF', zIndex: 100, pt: 2, pb: 1, display: 'flex', justifyContent: 'center' }}>
-                    <Box sx={{ width: 40, height: 4, backgroundColor: '#DADCE0', borderRadius: 2 }} />
-                </Box>
-                {content}
-            </Drawer>
+            <VaulDrawer.Root open={open} onOpenChange={(isOpen) => !isOpen && onClose?.()}>
+                <VaulDrawer.Portal>
+                    <VaulDrawer.Overlay
+                        style={{
+                            position: 'fixed',
+                            inset: 0,
+                            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                            zIndex: 1200,
+                        }}
+                    />
+                    <VaulDrawer.Content
+                        style={{
+                            position: 'fixed',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            height: '90vh',
+                            backgroundColor: '#FFFFFF',
+                            borderTopLeftRadius: 16,
+                            borderTopRightRadius: 16,
+                            zIndex: 1201,
+                            display: 'flex',
+                            flexDirection: 'column',
+                        }}
+                        aria-describedby={undefined}
+                    >
+                        {/* Accessibility: Hidden title for screen readers */}
+                        <VaulDrawer.Title style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}>
+                            Résultats de recherche
+                        </VaulDrawer.Title>
+                        {/* Handle pour le swipe */}
+                        <Box
+                            sx={{
+                                pt: 'max(12px, env(safe-area-inset-top, 12px))',
+                                pb: 1,
+                                display: 'flex',
+                                justifyContent: 'center',
+                                cursor: 'grab',
+                                flexShrink: 0,
+                                bgcolor: '#FFFFFF',
+                            }}
+                        >
+                            <Box sx={{ width: 40, height: 5, bgcolor: '#DADCE0', borderRadius: 2.5 }} />
+                        </Box>
+                        <Box sx={{ overflowY: 'auto', flex: 1, pb: 'env(safe-area-inset-bottom, 0px)' }}>
+                            {content}
+                        </Box>
+                    </VaulDrawer.Content>
+                </VaulDrawer.Portal>
+            </VaulDrawer.Root>
         );
     }
 
