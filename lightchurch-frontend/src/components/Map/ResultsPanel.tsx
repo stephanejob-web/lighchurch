@@ -225,13 +225,17 @@ const EventCard: React.FC<{ event: Event; onClick: () => void }> = React.memo(({
                         {smartTimeDisplay.text}
                     </Typography>
                 )}
-                <Typography variant="body2" sx={{ color: '#5F6368', fontSize: '0.875rem' }}>
-                    {event.event_city} • {event.church_name}
-                </Typography>
-                <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
-                    <Typography variant="caption" sx={{ color: '#5F6368', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <PlaceIcon sx={{ fontSize: 14 }} /> {formatDistance(event.distance_km)}
+                {(event.event_city || event.church_name) && (
+                    <Typography variant="body2" sx={{ color: '#5F6368', fontSize: '0.875rem' }}>
+                        {[event.event_city, event.church_name].filter(Boolean).join(' • ')}
                     </Typography>
+                )}
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
+                    {event.distance_km !== undefined && event.distance_km !== null && (
+                        <Typography variant="caption" sx={{ color: '#5F6368', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <PlaceIcon sx={{ fontSize: 14 }} /> {formatDistance(event.distance_km)}
+                        </Typography>
+                    )}
                     {((localInterestedCount ?? event.interested_count) !== undefined && (localInterestedCount ?? event.interested_count)! > 0) && (
                         <Typography variant="caption" sx={{ color: '#5F6368', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                             <CheckIcon sx={{ fontSize: 14 }} /> {localInterestedCount ?? event.interested_count} participations
@@ -543,7 +547,7 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
 
             {/* Filtres */}
             <Box sx={{ position: 'sticky', top: 0, bgcolor: '#FFFFFF', zIndex: 10, borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-                <Stack direction="row" spacing={1} useFlexGap sx={{ px: 2, py: 1, flexWrap: 'wrap' }}>
+                <Stack direction="row" spacing={1} sx={{ px: 2, py: 1, flexWrap: 'nowrap' }}>
                     <Chip
                         icon={filterChurches ? <CheckIcon sx={{ fontSize: 16 }} /> : undefined}
                         label={`Églises (${churches.length}${hasMoreChurches ? '+' : ''})`}
@@ -661,17 +665,18 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
                         {/* Handle pour le swipe */}
                         <Box
                             sx={{
-                                pt: 2,
+                                pt: 'max(12px, env(safe-area-inset-top, 12px))',
                                 pb: 1,
                                 display: 'flex',
                                 justifyContent: 'center',
                                 cursor: 'grab',
                                 flexShrink: 0,
+                                bgcolor: '#FFFFFF',
                             }}
                         >
                             <Box sx={{ width: 40, height: 5, bgcolor: '#DADCE0', borderRadius: 2.5 }} />
                         </Box>
-                        <Box sx={{ overflowY: 'auto', flex: 1 }}>
+                        <Box sx={{ overflowY: 'auto', flex: 1, pb: 'env(safe-area-inset-bottom, 0px)' }}>
                             {content}
                         </Box>
                     </VaulDrawer.Content>
