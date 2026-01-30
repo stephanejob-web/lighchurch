@@ -698,11 +698,12 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
                         </VaulDrawer.Title>
                         {/* Handle for swipe */}
                         <Box sx={{
-                            pt: 1.5,
+                            pt: 'max(12px, env(safe-area-inset-top, 12px))',
                             pb: 1,
                             display: 'flex',
                             justifyContent: 'center',
-                            flexShrink: 0
+                            flexShrink: 0,
+                            bgcolor: '#FFFFFF'
                         }}>
                             <Box sx={{
                                 width: 40,
@@ -711,7 +712,7 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
                                 borderRadius: 2.5
                             }} />
                         </Box>
-                        <Box sx={{ overflowY: 'auto', flex: 1, pb: 3 }}>
+                        <Box sx={{ overflowY: 'auto', flex: 1, pb: 'max(24px, env(safe-area-inset-bottom, 24px))' }}>
                             {innerContent}
                         </Box>
                     </VaulDrawer.Content>

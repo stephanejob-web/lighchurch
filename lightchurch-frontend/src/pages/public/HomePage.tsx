@@ -996,12 +996,21 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
 
             {isMobile ? (
                 <>
-                    <SearchPanel onSearch={() => {}}
-                        onFilterChange={(f) => { setShowChurches(f.churches); setShowEvents(f.events); }}
-                        onToggleList={() => setResultsPanelOpen(!resultsPanelOpen)}
-                        onLocationSelect={handleLocationSelect} 
-                        // Filters are now shown by default (removed hideFilters)
-                     />
+                    {/* Safe area padding for iOS notch */}
+                    <Box sx={{
+                        pt: 'env(safe-area-inset-top, 8px)',
+                        bgcolor: 'rgba(255,255,255,0.95)',
+                        backdropFilter: 'blur(10px)',
+                        position: 'relative',
+                        zIndex: 1100
+                    }}>
+                        <SearchPanel
+                            onSearch={() => {}}
+                            onFilterChange={(f) => { setShowChurches(f.churches); setShowEvents(f.events); }}
+                            onToggleList={() => setResultsPanelOpen(!resultsPanelOpen)}
+                            onLocationSelect={handleLocationSelect}
+                        />
+                    </Box>
 
                     {(resultsPanelOpen || viewMode === 'participations') && !detailDrawerOpen && (
                         <Box sx={{ position: 'absolute', top: 120, left: 16, bottom: 24, width: 'calc(100% - 32px)', zIndex: 900, pointerEvents: 'none' }}>
