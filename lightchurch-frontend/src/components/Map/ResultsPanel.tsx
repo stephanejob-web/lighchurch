@@ -498,7 +498,7 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
     const showSearchBar = totalBeforeFilter > 15 || searchQuery.length > 0;
 
     const content = (
-        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: '#FFFFFF' }}>
+        <Box sx={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', backgroundColor: '#FFFFFF' }}>
             {/* En-tête */}
             <Box sx={{ p: 2, borderBottom: '1px solid #E8EAED' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
