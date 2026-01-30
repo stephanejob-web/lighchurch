@@ -49,13 +49,10 @@ jobs:
             git pull origin main
 
             echo "🔧 Création du fichier .env..."
-            cat > .env << EOF
-            MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-            MYSQL_DATABASE=${MYSQL_DATABASE}
-            MYSQL_USER=${MYSQL_USER}
-            MYSQL_PASSWORD=${MYSQL_PASSWORD}
-            JWT_SECRET=${JWT_SECRET}
-            EOF
+            printf "MYSQL_ROOT_PASSWORD=%s\nMYSQL_DATABASE=%s\nMYSQL_USER=%s\nMYSQL_PASSWORD=%s\nJWT_SECRET=%s\n" \
+              "$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" "$MYSQL_USER" "$MYSQL_PASSWORD" "$JWT_SECRET" > .env
+            echo "Contenu du .env:"
+            cat .env
 
             echo "🔨 Build des images..."
             docker compose build --no-cache
