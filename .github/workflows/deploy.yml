@@ -45,13 +45,7 @@ jobs:
             if [ ! -f .env ]; then
               echo "🔧 Création du fichier .env (premier déploiement)..."
               echo "⚠️  IMPORTANT: Remplissez manuellement le .env sur le serveur avec vos secrets"
-              cat > .env << 'ENVEOF'
-MYSQL_ROOT_PASSWORD=
-MYSQL_DATABASE=lightchurch
-MYSQL_USER=
-MYSQL_PASSWORD=
-JWT_SECRET=
-ENVEOF
+              printf 'MYSQL_ROOT_PASSWORD=\nMYSQL_DATABASE=lightchurch\nMYSQL_USER=\nMYSQL_PASSWORD=\nJWT_SECRET=\n' > .env
             else
               echo "✅ Fichier .env existant préservé"
             fi
