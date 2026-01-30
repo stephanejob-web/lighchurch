@@ -662,6 +662,7 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
     }
 
     // Mobile: Use Vaul for native-like bottom sheet with swipe to close
+    console.log('DetailDrawer - isMobile:', isMobile, 'open:', open);
     if (isMobile) {
         return (
             <VaulDrawer.Root open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
@@ -689,7 +690,12 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
                             display: 'flex',
                             flexDirection: 'column'
                         }}
+                        aria-describedby={undefined}
                     >
+                        {/* Accessibility: Hidden title for screen readers */}
+                        <VaulDrawer.Title style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}>
+                            {type === 'event' ? 'Détails de l\'événement' : 'Détails de l\'église'}
+                        </VaulDrawer.Title>
                         {/* Handle for swipe */}
                         <Box sx={{
                             pt: 1.5,

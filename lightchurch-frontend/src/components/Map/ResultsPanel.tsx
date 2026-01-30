@@ -7,7 +7,6 @@ import {
     Divider,
     Stack,
     IconButton,
-    Drawer,
     useMediaQuery,
     useTheme,
     Chip,
@@ -15,6 +14,7 @@ import {
     InputBase,
     CircularProgress
 } from '@mui/material';
+import { Drawer as VaulDrawer } from 'vaul';
 import {
     Close as CloseIcon,
     AccountBalance as AccountBalanceIcon,
@@ -628,15 +628,55 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
 
     if (isMobile) {
         return (
-            <Drawer
-                anchor="bottom" open={open} onClose={onClose}
-                sx={{ '& .MuiDrawer-paper': { height: '90vh', borderTopLeftRadius: 16, borderTopRightRadius: 16, bgcolor: '#FFFFFF' } }}
-            >
-                <Box sx={{ position: 'sticky', top: 0, bgcolor: '#FFFFFF', zIndex: 100, pt: 2, pb: 1, display: 'flex', justifyContent: 'center' }}>
-                    <Box sx={{ width: 40, height: 4, backgroundColor: '#DADCE0', borderRadius: 2 }} />
-                </Box>
-                {content}
-            </Drawer>
+            <VaulDrawer.Root open={open} onOpenChange={(isOpen) => !isOpen && onClose?.()}>
+                <VaulDrawer.Portal>
+                    <VaulDrawer.Overlay
+                        style={{
+                            position: 'fixed',
+                            inset: 0,
+                            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                            zIndex: 1200,
+                        }}
+                    />
+                    <VaulDrawer.Content
+                        style={{
+                            position: 'fixed',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            height: '90vh',
+                            backgroundColor: '#FFFFFF',
+                            borderTopLeftRadius: 16,
+                            borderTopRightRadius: 16,
+                            zIndex: 1201,
+                            display: 'flex',
+                            flexDirection: 'column',
+                        }}
+                        aria-describedby={undefined}
+                    >
+                        {/* Accessibility: Hidden title for screen readers */}
+                        <VaulDrawer.Title style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}>
+                            Résultats de recherche
+                        </VaulDrawer.Title>
+                        {/* Handle pour le swipe */}
+                        <Box
+                            sx={{
+                                pt: 2,
+                                pb: 1,
+                                display: 'flex',
+                                justifyContent: 'center',
+                                cursor: 'grab',
+                                flexShrink: 0,
+                            }}
+                        >
+                            <Box sx={{ width: 40, height: 5, bgcolor: '#DADCE0', borderRadius: 2.5 }} />
+                        </Box>
+                        <Box sx={{ overflowY: 'auto', flex: 1 }}>
+                            {content}
+                        </Box>
+                    </VaulDrawer.Content>
+                </VaulDrawer.Portal>
+            </VaulDrawer.Root>
         );
     }
 
