@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Drawer, Box, Typography, Button, IconButton, Skeleton, Divider, Chip, Link, Stack, Alert, useTheme, useMediaQuery } from '@mui/material';
 import { Close, Directions, PunchClock, Call, Language, LocationOn, LocalParking, Accessible, Mic, Person, People, Euro, YouTube, InsertLink, CancelOutlined, Info, Email, Translate, Facebook, Instagram, Twitter, LinkedIn, WhatsApp, EventBusy } from '@mui/icons-material';
 import type { ChurchDetails, EventDetails } from '../../types/publicMap';
 import useEventInterestWeb from '../../hooks/useEventInterestWeb';
 import TikTokIcon from '../icons/TikTokIcon';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface DetailDrawerProps {
     open: boolean;
@@ -14,11 +14,39 @@ interface DetailDrawerProps {
     type: 'church' | 'event' | null;
     embedded?: boolean;
     onOrganizerClick?: (churchId: string) => void;
+    slideDirection?: 'left' | 'right'; // New prop
 }
 
-const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, data, type, embedded = false, onOrganizerClick }) => {
-    const navigate = useNavigate();
+const variants = {
+    enter: (direction: string) => ({
+        x: direction === 'right' ? 300 : -300,
+        opacity: 0
+    }),
+    center: {
+        x: 0,
+        opacity: 1
+    },
+    exit: (direction: string) => ({
+        x: direction === 'right' ? -300 : 300,
+        opacity: 0
+    })
+};
+
+const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, data, type, embedded = false, onOrganizerClick, slideDirection = 'right' }) => {
+    // Theme logic: Church = Blue (#1A73E8), Event = Red (#EA4335)
+    // We use a slightly darker shade for hover states
+    const themeColor = type === 'event' ? '#EA4335' : '#1A73E8';
+    const themeHoverColor = type === 'event' ? '#D93025' : '#1765CC';
+    const themeLightBg = type === 'event' ? '#FCE8E6' : '#E8F0FE';
+
     const theme = useTheme();
+    // ... existing hooks
+
+    // ... render methods ... 
+
+
+
+    // ... 
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const [overrideData, setOverrideData] = useState<ChurchDetails | null>(null);
     const [overrideType, setOverrideType] = useState<'church' | 'event' | null>(null);
@@ -233,7 +261,7 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
         );
     };
 
-    const renderEventDetails = (event: EventDetails) => {
+    const renderEventDetails = (event: EventDetails, themeColor: string = '#EA4335', themeHoverColor: string = '#D93025', themeLightBg: string = '#FCE8E6') => {
         const isCancelled = Boolean(event.cancelled_at);
 
         return (
@@ -250,7 +278,7 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
                     {event.title}
                 </Typography>
                 <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap' }}>
-                    <Chip label="Événement" size="small" sx={{ bgcolor: '#E8F0FE', color: '#1A73E8', fontWeight: 500 }} />
+                    <Chip label="Événement" size="small" sx={{ bgcolor: themeLightBg, color: themeColor, fontWeight: 500 }} />
                     <Chip label={new Date(event.start_datetime).toLocaleDateString('fr-FR')} size="small" sx={{ bgcolor: '#F1F3F4', color: '#5F6368' }} />
                     {event.details?.is_free && <Chip label="Gratuit" size="small" sx={{ bgcolor: '#E6F4EA', color: '#137333', fontWeight: 500 }} icon={<Euro />} />}
                 </Stack>
@@ -271,7 +299,7 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
                 <Divider sx={{ my: 2, borderColor: '#E8EAED' }} />
 
                 {/* Actions - Google Maps Style */}
-                <EventActions event={event} navigate={navigate} />
+                <EventActions event={event} themeColor={themeColor} themeHoverColor={themeHoverColor} />
 
                 <Divider sx={{ my: 2, borderColor: '#E8EAED' }} />
 
@@ -377,7 +405,7 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
                                     <Chip
                                         label={`${event.primary_language.flag || ''} ${event.primary_language.name}`}
                                         size="small"
-                                        sx={{ bgcolor: '#E8F0FE', color: '#1A73E8', fontWeight: 500 }}
+                                        sx={{ bgcolor: themeLightBg, color: themeColor, fontWeight: 500 }}
                                     />
                                 )}
                                 {event.translations && event.translations.length > 0 && (
@@ -541,7 +569,18 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
             <Skeleton variant="text" width="50%" />
         </Box>
     ) : data ? (
-        <Box>
+        <AnimatePresence mode='wait' custom={slideDirection}>
+             <motion.div
+                key={data?.id || 'empty'}
+                custom={slideDirection}
+                variants={variants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ type: 'spring', stiffness: 500, damping: 40 }}
+                style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+            >
+                <Box>
             {/* Visual Handle for Bottom Sheet on Mobile */}
             {isMobile && (
                 <Box sx={{ 
@@ -626,9 +665,12 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
 
             {overrideType === 'church' && overrideData
                 ? renderChurchDetails(overrideData as ChurchDetails)
-                : (type === 'church' ? renderChurchDetails(data as ChurchDetails) : renderEventDetails(data as EventDetails))
+                : (type === 'church' ? renderChurchDetails(data as ChurchDetails) : renderEventDetails(data as EventDetails, themeColor, themeHoverColor, themeLightBg))
             }
         </Box>
+
+            </motion.div>
+        </AnimatePresence>
     ) : null;
 
     if (embedded) {
@@ -668,60 +710,32 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
     );
 };
 
-const EventActions: React.FC<{ event: EventDetails; navigate: any }> = ({ event, navigate }) => {
+const EventActions: React.FC<{ event: EventDetails; themeColor: string; themeHoverColor: string }> = ({ event, themeColor, themeHoverColor }) => {
     const { isInterested, isPending, toggle } = useEventInterestWeb(event.id, false, event.interested_count);
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button
-                    variant="contained"
-                    startIcon={<Directions />}
-                    onClick={() => {
-                        window.open(
-                            `https://www.google.com/maps/dir/?api=1&destination=${event.latitude},${event.longitude}`,
-                            '_blank'
-                        );
-                    }}
-                    sx={{
-                        flex: 1,
-                        borderRadius: 8,
-                        bgcolor: '#1A73E8',
-                        textTransform: 'none',
-                        fontWeight: 500,
-                        boxShadow: 'none',
-                        '&:hover': { bgcolor: '#1765CC', boxShadow: 'none' }
-                    }}
-                >
-                    Itinéraire
-                </Button>
-                <Button
-                    variant="outlined"
-                    startIcon={<LocationOn />}
-                    onClick={() => {
-                        try {
-                            navigate(`/map?focusEvent=${event.id}`);
-                        } catch { }
-                        try {
-                            window.dispatchEvent(new CustomEvent('light_church:focus_event', { detail: { eventId: event.id } }));
-                        } catch { }
-                    }}
-                    sx={{
-                        flex: 1,
-                        borderRadius: 8,
-                        borderColor: '#DADCE0',
-                        color: '#1A73E8',
-                        textTransform: 'none',
-                        fontWeight: 500,
-                        '&:hover': {
-                            borderColor: '#DADCE0',
-                            bgcolor: '#F1F3F4'
-                        }
-                    }}
-                >
-                    Centrer la carte
-                </Button>
-            </Box>
+            <Button
+                variant="contained"
+                startIcon={<Directions />}
+                fullWidth
+                onClick={() => {
+                    window.open(
+                        `https://www.google.com/maps/dir/?api=1&destination=${event.latitude},${event.longitude}`,
+                        '_blank'
+                    );
+                }}
+                sx={{
+                    borderRadius: 8,
+                    bgcolor: themeColor,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    boxShadow: 'none',
+                    '&:hover': { bgcolor: themeHoverColor, boxShadow: 'none' }
+                }}
+            >
+                Itinéraire
+            </Button>
 
             {/* Inscription / Désinscription Bouton Large */}
             <Button
@@ -736,11 +750,11 @@ const EventActions: React.FC<{ event: EventDetails; navigate: any }> = ({ event,
                     textTransform: 'none',
                     fontWeight: 500,
                     boxShadow: 'none',
-                    bgcolor: isInterested ? 'transparent' : '#1A73E8',
+                    bgcolor: isInterested ? 'transparent' : themeColor,
                     color: isInterested ? '#d32f2f' : '#fff',
                     borderColor: isInterested ? '#d32f2f' : 'transparent',
                     '&:hover': {
-                        bgcolor: isInterested ? '#ffebee' : '#1765CC',
+                        bgcolor: isInterested ? '#ffebee' : themeHoverColor,
                         borderColor: isInterested ? '#d32f2f' : 'transparent',
                         boxShadow: 'none'
                     }

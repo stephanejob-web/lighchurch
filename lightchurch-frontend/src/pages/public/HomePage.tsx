@@ -575,6 +575,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
     const [mapType, setMapType] = useState<'satellite' | 'standard'>('satellite');
     const [resultsPanelOpen, setResultsPanelOpen] = useState(true);
     const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
+    const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right');
 
     // ========== NAVIGATION HISTORY (Bouton Retour) ==========
     const [previousPosition, setPreviousPosition] = useState<{ center: [number, number]; zoom: number } | null>(null);
@@ -844,7 +845,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                     const church = await fetchChurchDetails(parseInt(churchId));
                     if (church && church.latitude && church.longitude) {
                         // Centrer la carte sur l'église
-                        mapInstance.flyTo([church.latitude, church.longitude], 16, { duration: 1 });
+                        mapInstance.flyTo([church.latitude, church.longitude], 16, { duration: 0.8 });
 
                         // Ouvrir le drawer avec les détails de l'église
                         setSelectedItem(church);
@@ -909,6 +910,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
     const handleCloseDrawer = useCallback(() => {
         if (drawerHistory.length > 0) {
             // Go back in history
+            setSlideDirection('left');
             const newHistory = [...drawerHistory];
             const previous = newHistory.pop();
             setDrawerHistory(newHistory);
@@ -926,6 +928,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
         }
         
         // Normal close
+        setSlideDirection('right');
         setDetailDrawerOpen(false);
         setSelectedItem(null);
         setDrawerHistory([]);
@@ -1035,7 +1038,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                 // setDetailDrawerOpen(true); // Already open
                                 setMapCenter([c.latitude, c.longitude]);
                                 setMapZoom(16);
-                                mapInstance?.flyTo([c.latitude, c.longitude], 16, { duration: 1 });
+                                mapInstance?.flyTo([c.latitude, c.longitude], 16, { duration: 0.8 });
                                 
                                 try {
                                     const { fetchChurchDetails } = await import('../../services/publicMapService');
@@ -1049,7 +1052,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                 try {
                                     const church = await fetchChurchDetails(Number(id));
                                     if (church && church.latitude && church.longitude) {
-                                        mapInstance?.flyTo([church.latitude, church.longitude], 16, { duration: 1 });
+                                        mapInstance?.flyTo([church.latitude, church.longitude], 16, { duration: 0.8 });
                                         setSelectedItem(church);
                                         setSelectedType('church');
                                     }
@@ -1118,7 +1121,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                 onFilterChange={(f) => { setShowChurches(f.churches); setShowEvents(f.events); }}
                                 onToggleList={() => setResultsPanelOpen(!resultsPanelOpen)}
                                 onLocationSelect={(lat, lng, label) => {
-                                    mapInstance?.flyTo([lat, lng], 14, { duration: 1.5 });
+                                    mapInstance?.flyTo([lat, lng], 14, { duration: 0.8 });
                                     if (label) {
                                         // Show visual feedback or correct map center
                                     }
@@ -1152,7 +1155,11 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                     loading={!selectedItem}
                                     data={selectedItem}
                                     type={selectedType}
+                                    slideDirection={slideDirection}
                                     onOrganizerClick={async (id) => {
+                                        // Dive deeper -> Slide Right (Exit left, Enter right)
+                                        setSlideDirection('right');
+
                                         // Save current event to history before switching
                                         if (selectedItem && selectedType) {
                                             setDrawerHistory(prev => [...prev, { item: selectedItem, type: selectedType }]);
@@ -1165,7 +1172,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                             setSelectedType('church');
                                             setMapCenter([c.latitude, c.longitude]);
                                             setMapZoom(16);
-                                            mapInstance?.flyTo([c.latitude, c.longitude], 16, { duration: 1 });
+                                            mapInstance?.flyTo([c.latitude, c.longitude], 16, { duration: 0.8 });
 
                                             try {
                                                 const { fetchChurchDetails } = await import('../../services/publicMapService');
@@ -1179,7 +1186,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                             try {
                                                 const church = await fetchChurchDetails(Number(id));
                                                 if (church && church.latitude && church.longitude) {
-                                                    mapInstance?.flyTo([church.latitude, church.longitude], 16, { duration: 1 });
+                                                    mapInstance?.flyTo([church.latitude, church.longitude], 16, { duration: 0.8 });
                                                     setSelectedItem(church);
                                                     setSelectedType('church');
                                                 }

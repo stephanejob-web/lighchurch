@@ -52,7 +52,7 @@ const MapControls: React.FC<MapControlsProps> = ({
                 position: 'absolute',
                 bottom: isMobile ? 120 : 24,
                 right: 16,
-                zIndex: 1000,
+                zIndex: isMobile ? 400 : 1000,
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 2,
