@@ -29,6 +29,13 @@ jobs:
 
             echo "📦 Déploiement LightChurch..."
 
+            # Clone le repo s'il n'existe pas, sinon pull
+            if [ ! -d ~/apps/lightchurch ]; then
+              echo "🆕 Premier déploiement - Clonage du repo..."
+              mkdir -p ~/apps
+              git clone https://github.com/${{ github.repository }}.git ~/apps/lightchurch
+            fi
+
             cd ~/apps/lightchurch
 
             echo "⬇️ Pull du code..."
