@@ -7,11 +7,21 @@ interface SearchPanelProps {
     onSearch: (query: string) => void;
     onFilterChange: (filters: { churches: boolean; events: boolean }) => void;
     onToggleList: () => void;
-    onLocationSelect?: (lat: number, lng: number, label: string) => void;
+    onLocationSelect?: (lat: number, lng: number, label?: string) => void;
+    embedded?: boolean;
+    floating?: boolean; // New prop for floating embedded style
     hideFilters?: boolean;
 }
 
-const SearchPanel: React.FC<SearchPanelProps & { embedded?: boolean }> = ({ onSearch, onFilterChange, onToggleList, onLocationSelect, embedded = false, hideFilters = false }) => {
+const SearchPanel: React.FC<SearchPanelProps> = ({
+    onSearch,
+    onFilterChange,
+    onToggleList,
+    onLocationSelect,
+    embedded,
+    floating,
+    hideFilters
+}) => {
     const [query, setQuery] = useState('');
     const [showChurches, setShowChurches] = useState(true);
     const [showEvents, setShowEvents] = useState(true);
@@ -105,19 +115,20 @@ const SearchPanel: React.FC<SearchPanelProps & { embedded?: boolean }> = ({ onSe
             {/* Search Bar */}
             <Paper
                 component="form"
-                elevation={embedded ? 0 : 1}
+                elevation={embedded && !floating ? 0 : 2}
                 sx={{
                     p: '2px 4px',
                     display: 'flex',
                     alignItems: 'center',
-                    borderRadius: 8, // Google Maps Desktop style (rounded rect, not full pill in sidebar)
+                    width: '100%',
+                    borderRadius: 8, // Google Maps Desktop style
                     // Google Maps search bar is more rounded. Let's try 8px (2) or 24px (pill) if we want "Google" style. 
                     // But in sidebar it's usually a rectangle with rounded corners.
 
-                    boxShadow: embedded ? '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)' : '0 2px 4px rgba(0,0,0,0.2)',
-                    border: 'none',
+                    boxShadow: embedded && !floating ? 'none' : '0 2px 4px rgba(0,0,0,0.2), 0 -1px 0px rgba(0,0,0,0.02)',
+                    border: embedded && !floating ? '1px solid #DADCE0' : 'none',
                     position: 'relative',
-                    bgcolor: '#fff',
+                    bgcolor: '#FFFFFF',
                     transition: 'box-shadow 0.2s',
                     '&:hover': embedded ? {
                         boxShadow: '0 1px 2px rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)',
