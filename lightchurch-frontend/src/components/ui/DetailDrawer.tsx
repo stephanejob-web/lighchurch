@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Drawer, Box, Typography, Button, IconButton, Skeleton, Divider, Chip, Link, Stack, Alert } from '@mui/material';
+import { Drawer, Box, Typography, Button, IconButton, Skeleton, Divider, Chip, Link, Stack, Alert, useTheme, useMediaQuery } from '@mui/material';
 import { Close, Directions, PunchClock, Call, Language, LocationOn, LocalParking, Accessible, Mic, Person, People, Euro, YouTube, InsertLink, CancelOutlined, Info, Email, Translate, Facebook, Instagram, Twitter, LinkedIn, WhatsApp, EventBusy } from '@mui/icons-material';
 import type { ChurchDetails, EventDetails } from '../../types/publicMap';
 import useEventInterestWeb from '../../hooks/useEventInterestWeb';
@@ -18,6 +18,8 @@ interface DetailDrawerProps {
 
 const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, data, type, embedded = false, onOrganizerClick }) => {
     const navigate = useNavigate();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const [overrideData, setOverrideData] = useState<ChurchDetails | null>(null);
     const [overrideType, setOverrideType] = useState<'church' | 'event' | null>(null);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
@@ -233,17 +235,6 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
 
     const renderEventDetails = (event: EventDetails) => {
         const isCancelled = Boolean(event.cancelled_at);
-        // Hook for unsubscription logic in detail view might be needed, or we just rely on parent updates?
-        // Actually, DetailDrawer doesn't have the subscription hook. We should probably accept an onToggleInterest prop or similar,
-        // but for now, since subscription state is local/cached, we can't easily toggle it HERE without the hook.
-        // However, the user request says "pas de buttons pour me desinscritre".
-        // The Participation logic is currently inside EventCard and MyParticipationsSidebar via `useEventInterestWeb`.
-        // To add it here, we need to import `useEventInterestWeb`.
-
-        // NOTE: We cannot use hooks inside this render function (nested function). 
-        // We will need to extract this or use a separate component.
-        // Let's create a sub-component for actions.
-
 
         return (
             <Box sx={{ p: 3 }}>
@@ -551,6 +542,28 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
         </Box>
     ) : data ? (
         <Box>
+            {/* Visual Handle for Bottom Sheet on Mobile */}
+            {isMobile && (
+                <Box sx={{ 
+                    position: 'sticky', 
+                    top: 0, 
+                    zIndex: 10, 
+                    bgcolor: 'white', 
+                    pt: 1.5, 
+                    pb: 1, 
+                    display: 'flex', 
+                    justifyContent: 'center',
+                    borderBottom: '1px solid transparent' // Placeholder
+                }}>
+                    <Box sx={{ 
+                        width: 40, 
+                        height: 4, 
+                        bgcolor: '#DADCE0', 
+                        borderRadius: 2 
+                    }} />
+                </Box>
+            )}
+
             {(() => {
                 // Determine current data and type logic
                 const currentData = overrideData || data;
@@ -593,6 +606,8 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
                 }
 
                 // Render just Close button if no image
+                // On Mobile Bottom Sheet, a close button might be redundant if we have a handle, 
+                // but let's keep it for accessibility and explicit action.
                 return (
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
                         <IconButton
@@ -626,19 +641,25 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
 
     return (
         <Drawer
-            anchor="left"
+            anchor={isMobile ? 'bottom' : 'left'}
             open={open}
             onClose={handleClose}
             variant="persistent"
             PaperProps={{
                 sx: {
-                    width: { xs: '100%', sm: 400 },
-                    top: 0,
-                    height: '100%',
+                    width: isMobile ? '100%' : 400,
+                    // Mobile: Max height 85% of screen, rounded top corners
+                    height: isMobile ? '85vh' : '100%',
+                    maxHeight: isMobile ? '85vh' : '100%',
+                    top: isMobile ? 'auto' : 0,
+                    bottom: 0,
+                    borderTopLeftRadius: isMobile ? 16 : 0,
+                    borderTopRightRadius: isMobile ? 16 : 0,
                     boxShadow: '0 1px 2px 0 rgba(60,64,67,0.3), 0 2px 6px 2px rgba(60,64,67,0.15)',
-                    borderRight: 'none',
-                    zIndex: 2200, // Higher than SearchPanel (2000) and Autocomplete (2100)
-                    bgcolor: '#FFFFFF'
+                    borderRight: isMobile ? 'none' : 'none', // Removed border generally
+                    zIndex: 2200, 
+                    bgcolor: '#FFFFFF',
+                    pb: isMobile ? 3 : 0 // Safe area for mobile
                 }
             }}
         >

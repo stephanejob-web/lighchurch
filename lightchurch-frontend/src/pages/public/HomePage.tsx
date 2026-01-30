@@ -3,19 +3,14 @@ import {
     Box,
     useMediaQuery,
     useTheme,
+    Paper,
     LinearProgress,
-    Badge,
     Alert,
     Snackbar,
-    Tooltip,
 } from '@mui/material';
 import {
-    MyLocation as MyLocationIcon,
-    Event as EventIcon,
-    Home as HomeIcon,
-    Add as AddIcon,
-    Remove as RemoveIcon,
     Undo as UndoIcon,
+    ChevronLeft,
 } from '@mui/icons-material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
@@ -30,8 +25,9 @@ import { useSupercluster } from '../../hooks/useSupercluster';
 import SearchPanel from '../../components/ui/SearchPanel';
 import DetailDrawer from '../../components/ui/DetailDrawer';
 import ResultsPanel from '../../components/Map/ResultsPanel';
-import Sidebar from '../../components/Map/Sidebar';
+// import Sidebar from '../../components/Map/Sidebar';
 import MyParticipationsSidebar from '../../components/Map/MyParticipationsSidebar';
+import MapControls from '../../components/Map/MapControls';
 
 // Fix Leaflet default icon
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -541,39 +537,7 @@ const UserMarker: React.FC<{ position: [number, number] }> = React.memo(({ posit
     return null;
 });
 
-const ZoomControls: React.FC<{ mapRef: L.Map | null }> = ({ mapRef }) => {
-    return (
-        <Box sx={{
-            display: 'flex', flexDirection: 'column',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
-            borderRadius: 1,
-            overflow: 'hidden',
-        }}>
-            <Box
-                sx={{
-                    bgcolor: 'white', width: 40, height: 40,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: 'pointer', borderBottom: '1px solid #E6E6E6',
-                    '&:hover': { bgcolor: '#F8F8F8' }
-                }}
-                onClick={() => mapRef?.zoomIn()}
-            >
-                <AddIcon sx={{ color: '#666' }} />
-            </Box>
-            <Box
-                sx={{
-                    bgcolor: 'white', width: 40, height: 40,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: 'pointer',
-                    '&:hover': { bgcolor: '#F8F8F8' }
-                }}
-                onClick={() => mapRef?.zoomOut()}
-            >
-                <RemoveIcon sx={{ color: '#666' }} />
-            </Box>
-        </Box>
-    );
-};
+
 
 // ============================================================================
 // MAIN COMPONENT
@@ -610,6 +574,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
     const [selectedType, setSelectedType] = useState<'church' | 'event' | null>(null);
     const [mapType, setMapType] = useState<'satellite' | 'standard'>('satellite');
     const [resultsPanelOpen, setResultsPanelOpen] = useState(true);
+    const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
 
     // ========== NAVIGATION HISTORY (Bouton Retour) ==========
     const [previousPosition, setPreviousPosition] = useState<{ center: [number, number]; zoom: number } | null>(null);
@@ -1095,66 +1060,151 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                         }} />
                 </>
             ) : (
-                <Sidebar>
-                    {viewMode === 'explore' && !detailDrawerOpen && (
-                        <SearchPanel embedded onSearch={() => {}}
-                            onFilterChange={(f) => { setShowChurches(f.churches); setShowEvents(f.events); }}
-                            onToggleList={() => setResultsPanelOpen(!resultsPanelOpen)}
-                            onLocationSelect={handleLocationSelect} />
-                    )}
-                    <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                        {detailDrawerOpen ? (
-                            <DetailDrawer embedded open onClose={handleCloseDrawer} loading={!selectedItem}
-                                data={selectedItem} type={selectedType}
-                                onOrganizerClick={async (id) => {
-                                    // Save current event to history before switching
-                                    if (selectedItem && selectedType) {
-                                        setDrawerHistory(prev => [...prev, { item: selectedItem, type: selectedType }]);
-                                    }
+                // DESKTOP LAYOUT (Floating Cards)
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: 16,
+                        left: 16,
+                        width: 400,
+                        zIndex: 2000, // Higher than map
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 1.5,
+                        pointerEvents: 'none', // Allow clicks to pass through spacer areas
+                        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        transform: isPanelCollapsed ? 'translateX(-420px)' : 'translateX(0)',
+                    }}
+                >
+                    {/* TOGGLE BUTTON - Always visible */}
+                    <Paper
+                        elevation={4}
+                        onClick={() => setIsPanelCollapsed(!isPanelCollapsed)}
+                        sx={{
+                            position: 'absolute',
+                            right: -24, // Sticks out to the right
+                            top: 68, // Aligned between search and results approximately
+                            width: 24,
+                            height: 48,
+                            bgcolor: 'white',
+                            borderTopRightRadius: 8,
+                            borderBottomRightRadius: 8,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            pointerEvents: 'auto',
+                            zIndex: 2100,
+                            '&:hover': { bgcolor: '#f5f5f5' }
+                        }}
+                    >
+                        <ChevronLeft
+                            sx={{
+                                color: '#666',
+                                transform: isPanelCollapsed ? 'rotate(180deg)' : 'none',
+                                transition: 'transform 0.3s'
+                            }}
+                        />
+                    </Paper>
 
-                                    // D'abord chercher dans les églises locales
-                                    const c = churches.find(c => String(c.id) === String(id));
-                                    if (c) {
-                                        // Direct switch logic (without clearing history)
-                                        setSelectedType('church');
-                                        setMapCenter([c.latitude, c.longitude]);
-                                        setMapZoom(16);
-                                        mapInstance?.flyTo([c.latitude, c.longitude], 16, { duration: 1 });
-                                        
-                                        try {
-                                            const { fetchChurchDetails } = await import('../../services/publicMapService');
-                                            const details = await fetchChurchDetails(c.id);
-                                            setSelectedItem(details);
-                                        } catch (err) {
-                                            setSelectedItem(c);
-                                        }
-                                    } else {
-                                        // Si non trouvée, récupérer depuis l'API et centrer la carte
-                                        try {
-                                            const church = await fetchChurchDetails(Number(id));
-                                            if (church && church.latitude && church.longitude) {
-                                                mapInstance?.flyTo([church.latitude, church.longitude], 16, { duration: 1 });
-                                                setSelectedItem(church);
-                                                setSelectedType('church');
-                                            }
-                                        } catch (error) {
-                                            console.error('Error fetching organizer church:', error);
-                                        }
+                    {/* MAIN CONTENT - Pointer events auto to re-enable clicking */}
+                    <Box sx={{ pointerEvents: 'auto' }}>
+                        {/* 1. Search Bar */}
+                        {viewMode === 'explore' && !detailDrawerOpen && (
+                            <SearchPanel
+                                floating // Enable floating style (strong shadow)
+                                embedded // Keep internal styling clean
+                                onSearch={() => { }} 
+                                onFilterChange={(f) => { setShowChurches(f.churches); setShowEvents(f.events); }}
+                                onToggleList={() => setResultsPanelOpen(!resultsPanelOpen)}
+                                onLocationSelect={(lat, lng, label) => {
+                                    mapInstance?.flyTo([lat, lng], 14, { duration: 1.5 });
+                                    if (label) {
+                                        // Show visual feedback or correct map center
                                     }
-                                }} />
-                        ) : viewMode === 'participations' ? (
-                            <MyParticipationsSidebar onEventClick={(e) => handleMarkerClick(e, 'event')} />
-                        ) : (
-                            <ResultsPanel
-                                onChurchClick={(c) => handleMarkerClick(c, 'church')}
-                                onEventClick={(e) => handleMarkerClick(e, 'event')}
-                                isGeolocated={!!userLocation} isMobileView={false}
-                                currentBounds={currentBounds}
-                                userLocation={userLocation}
-                                embedded />
+                                    setPreviousPosition({ center: mapCenter, zoom: mapZoom });
+                                    setShowReturnButton(true);
+                                    if (returnButtonTimeoutRef.current) clearTimeout(returnButtonTimeoutRef.current);
+                                    returnButtonTimeoutRef.current = setTimeout(() => setShowReturnButton(false), 10000);
+                                }}
+                            />
                         )}
+
+                        {/* 2. Results / Details Card */}
+                        <Paper
+                            elevation={3}
+                            sx={{
+                                mt: 1.5,
+                                maxHeight: 'calc(100vh - 140px)', // Vertical space constraint
+                                overflow: 'hidden',
+                                borderRadius: 2,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                bgcolor: 'transparent', // Let children handle background
+                                border: 'none'
+                            }}
+                        >
+                            {detailDrawerOpen ? (
+                                <DetailDrawer
+                                    embedded
+                                    open
+                                    onClose={handleCloseDrawer}
+                                    loading={!selectedItem}
+                                    data={selectedItem}
+                                    type={selectedType}
+                                    onOrganizerClick={async (id) => {
+                                        // Save current event to history before switching
+                                        if (selectedItem && selectedType) {
+                                            setDrawerHistory(prev => [...prev, { item: selectedItem, type: selectedType }]);
+                                        }
+
+                                        // D'abord chercher dans les églises locales
+                                        const c = churches.find(c => String(c.id) === String(id));
+                                        if (c) {
+                                            // Direct switch logic (without clearing history)
+                                            setSelectedType('church');
+                                            setMapCenter([c.latitude, c.longitude]);
+                                            setMapZoom(16);
+                                            mapInstance?.flyTo([c.latitude, c.longitude], 16, { duration: 1 });
+
+                                            try {
+                                                const { fetchChurchDetails } = await import('../../services/publicMapService');
+                                                const details = await fetchChurchDetails(c.id);
+                                                setSelectedItem(details);
+                                            } catch (err) {
+                                                setSelectedItem(c);
+                                            }
+                                        } else {
+                                            // Si non trouvée, récupérer depuis l'API et centrer la carte
+                                            try {
+                                                const church = await fetchChurchDetails(Number(id));
+                                                if (church && church.latitude && church.longitude) {
+                                                    mapInstance?.flyTo([church.latitude, church.longitude], 16, { duration: 1 });
+                                                    setSelectedItem(church);
+                                                    setSelectedType('church');
+                                                }
+                                            } catch (error) {
+                                                console.error('Error fetching organizer church:', error);
+                                            }
+                                        }
+                                    }}
+                                />
+                            ) : viewMode === 'participations' ? (
+                                <MyParticipationsSidebar onEventClick={(e) => handleMarkerClick(e, 'event')} />
+                            ) : (
+                                <ResultsPanel
+                                    embedded
+                                    onChurchClick={(c) => handleMarkerClick(c, 'church')}
+                                    onEventClick={(e) => handleMarkerClick(e, 'event')}
+                                    isGeolocated={!!userLocation}
+                                    isMobileView={false}
+                                    currentBounds={currentBounds}
+                                    userLocation={userLocation}
+                                />
+                            )}
+                        </Paper>
                     </Box>
-                </Sidebar>
+                </Box>
             )}
 
             <MapContainer center={mapCenter} zoom={mapZoom} minZoom={3} maxZoom={18}
@@ -1182,6 +1232,19 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                     participations={participations}
                     onMarkerClick={handleMarkerClick}
                     onClusterClick={handleClusterClick}
+                />
+
+                {/* Map Controls (FABs) */}
+                <MapControls
+                    onLocate={handleRecenter}
+                    isLoadingLocation={false}
+                    isGeolocated={!!userLocation}
+                    mapType={mapType}
+                    setMapType={setMapType}
+                    userLocation={userLocation}
+                    participationsCount={participations.size}
+                    onParticipationsClick={() => navigate('/my-participations')}
+                    onHomeClick={() => navigate('/')}
                 />
             </MapContainer>
 
@@ -1222,91 +1285,6 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                     </Box>
                 </Box>
             )}
-
-            <Box sx={{ position: 'absolute', bottom: 24, right: 24, display: 'flex', alignItems: 'flex-end', gap: 1.5, zIndex: 1000 }}>
-                {/* 1. Layer Switcher (Sitting to the left) - Google Maps style with real map thumbnails */}
-                <Box
-                    onClick={() => setMapType(mapType === 'satellite' ? 'standard' : 'satellite')}
-                    sx={{
-                        width: 64,
-                        height: 64,
-                        borderRadius: 2,
-                        cursor: 'pointer',
-                        border: '2px solid #FFFFFF',
-                        boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
-                        overflow: 'hidden',
-                        position: 'relative',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                            boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
-                            transform: 'scale(1.02)'
-                        },
-                        // Show the alternative map type as preview
-                        backgroundImage: mapType === 'satellite'
-                            ? 'url(https://tile.openstreetmap.org/10/525/367.png)' // Plan preview (Paris area)
-                            : 'url(https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/10/367/525)', // Satellite preview
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center'
-                    }}
-                >
-                    <Box sx={{
-                        position: 'absolute', bottom: 0, left: 0, right: 0,
-                        bgcolor: 'rgba(0,0,0,0.6)', color: 'white',
-                        fontSize: '0.7rem', fontWeight: 500, textAlign: 'center', py: 0.5,
-                        backdropFilter: 'blur(2px)'
-                    }}>
-                        {mapType === 'satellite' ? 'Plan' : 'Satellite'}
-                    </Box>
-                </Box>
-
-                {/* 2. Action Buttons Stack (Right) - Google Maps Style */}
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center' }}>
-                    
-                    {/* My Location - Square Button */}
-                    {userLocation && (
-                        <Tooltip title="Ma position" placement="left">
-                            <Box sx={{ 
-                                bgcolor: 'white', width: 40, height: 40, borderRadius: 1,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                                boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
-                                '&:hover': { bgcolor: '#F8F8F8' } 
-                            }} onClick={handleRecenter}>
-                                <MyLocationIcon sx={{ color: '#666' }} />
-                            </Box>
-                        </Tooltip>
-                    )}
-
-                    {/* Zoom Controls - Stacked Square Buttons */}
-                    <Box sx={{ my: 0.5 }}>
-                        <ZoomControls mapRef={mapInstance} />
-                    </Box>
-
-                    {/* Other Actions - Square Buttons */}
-                    <Tooltip title="Mes participations" placement="left">
-                        <Box sx={{ 
-                            bgcolor: 'white', width: 40, height: 40, borderRadius: 1,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                            boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
-                            '&:hover': { bgcolor: '#F8F8F8' }
-                        }} onClick={() => navigate('/my-participations')}>
-                            <Badge badgeContent={participations.size} color="error" max={99}>
-                                <EventIcon sx={{ color: participations.size > 0 ? '#EA4335' : '#666' }} />
-                            </Badge>
-                        </Box>
-                    </Tooltip>
-
-                    <Tooltip title="Accueil" placement="left">
-                        <Box sx={{ 
-                            bgcolor: 'white', width: 40, height: 40, borderRadius: 1,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                            boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
-                            '&:hover': { bgcolor: '#F8F8F8' }
-                        }} onClick={() => navigate('/')}>
-                            <HomeIcon sx={{ color: '#666' }} />
-                        </Box>
-                    </Tooltip>
-                </Box>
-            </Box>
         </React.Fragment>
     );
 };
