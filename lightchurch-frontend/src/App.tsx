@@ -6,6 +6,7 @@ import PublicLayout from './layouts/PublicLayout';
 import MapLayout from './layouts/MapLayout';
 import HomePage from './pages/public/HomePage';
 import LandingPage from './pages/public/LandingPage';
+import ForPastorsPage from './pages/public/ForPastorsPage';
 
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -34,6 +35,7 @@ function App() {
             <Routes>
               {/* Pages publiques */}
               <Route path="/" element={<LandingPage />} />
+              <Route path="/for-pastors" element={<ForPastorsPage />} />
               <Route path="/map" element={
                 <MapLayout>
                   <HomePage />
