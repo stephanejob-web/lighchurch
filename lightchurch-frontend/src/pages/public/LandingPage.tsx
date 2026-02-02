@@ -16,7 +16,6 @@ import {
     Search,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import lightChurchLogo from '../../assets/light-church.png';
 import ParticleBackground from '../../components/landing/ParticleBackground';
 
 const MotionBox = motion(Box);
