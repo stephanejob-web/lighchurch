@@ -228,7 +228,7 @@ export default function AdminEvents() {
             <Card sx={{ bgcolor: 'background.paper' }}>
                 <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                     <Grid container spacing={2} alignItems="center">
-                        <Grid size={{ xs: 12, md: 6 }}>
+                        <Grid xs={12} md={6}>
                             <TextField
                                 fullWidth
                                 placeholder="Rechercher un événement, une église, un créateur..."
@@ -244,7 +244,7 @@ export default function AdminEvents() {
                                 label="Rechercher"
                             />
                         </Grid>
-                        <Grid size={{ xs: 12, md: 6 }}>
+                        <Grid xs={12} md={6}>
                             <FormControl fullWidth>
                                 <InputLabel>Statut</InputLabel>
                                 <Select
