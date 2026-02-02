@@ -1,14 +1,24 @@
-import React, { useCallback, useRef, useEffect, useState } from 'react';
-import { motion, useAnimation, useMotionValue } from 'framer-motion';
+import React, { useCallback, useRef, useEffect, useState, useImperativeHandle, forwardRef } from 'react';
+import { motion, useAnimation, useMotionValue, useDragControls, useTransform } from 'framer-motion';
 import type { PanInfo } from 'framer-motion';
-import { Box } from '@mui/material';
+import { Box, IconButton, Typography } from '@mui/material';
+import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
+
+export interface BottomSheetRef {
+    snapTo: (index: number) => void;
+    getCurrentSnapIndex: () => number;
+}
 
 interface BottomSheetProps {
     children: React.ReactNode;
     snapPoints: number[]; // En pourcentage de la hauteur de l'écran (ex: [15, 50, 90])
     initialSnapIndex?: number;
     onChange?: (index: number) => void;
-    headerContent?: React.ReactNode;
+    // Mode détails
+    detailsContent?: React.ReactNode;
+    showDetails?: boolean;
+    onBackToList?: () => void;
+    detailsTitle?: string;
 }
 
 /**
@@ -17,19 +27,40 @@ interface BottomSheetProps {
  * - Plusieurs snap points
  * - Swipe pour changer de position
  * - Animation fluide
+ * - Support mode détails avec transition animée
  */
-const BottomSheet: React.FC<BottomSheetProps> = ({
+const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(({
     children,
     snapPoints,
     initialSnapIndex = 0,
     onChange,
-    headerContent
-}) => {
+    detailsContent,
+    showDetails = false,
+    onBackToList,
+    detailsTitle
+}, ref) => {
     const controls = useAnimation();
+    const dragControls = useDragControls();
     const containerRef = useRef<HTMLDivElement>(null);
     const [currentSnapIndex, setCurrentSnapIndex] = useState(initialSnapIndex);
     const [windowHeight, setWindowHeight] = useState(window.innerHeight);
     const y = useMotionValue(0);
+
+    // Exposer les méthodes via ref
+    useImperativeHandle(ref, () => ({
+        snapTo: (index: number) => {
+            const positions = getSnapPositions();
+            if (index >= 0 && index < positions.length) {
+                controls.start({
+                    y: positions[index],
+                    transition: { type: 'spring', damping: 30, stiffness: 300 }
+                });
+                setCurrentSnapIndex(index);
+                onChange?.(index);
+            }
+        },
+        getCurrentSnapIndex: () => currentSnapIndex
+    }));
 
     // Calculer les positions Y pour chaque snap point (en pixels depuis le bas)
     const getSnapPositions = useCallback(() => {
@@ -48,6 +79,25 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
         const positions = getSnapPositions();
         controls.set({ y: positions[initialSnapIndex] });
     }, [controls, getSnapPositions, initialSnapIndex]);
+
+    // Quand on passe en mode détails, monter le sheet à 50% minimum
+    const prevShowDetailsRef = useRef(showDetails);
+    useEffect(() => {
+        // Seulement quand showDetails passe de false à true
+        if (showDetails && !prevShowDetailsRef.current) {
+            // Monter le sheet si on est en position basse
+            if (currentSnapIndex < 1) {
+                const positions = getSnapPositions();
+                const midIndex = Math.min(1, positions.length - 1);
+                controls.start({
+                    y: positions[midIndex],
+                    transition: { type: 'spring', damping: 30, stiffness: 300 }
+                });
+                setCurrentSnapIndex(midIndex);
+            }
+        }
+        prevShowDetailsRef.current = showDetails;
+    }, [showDetails, controls, getSnapPositions, currentSnapIndex]);
 
     // Trouver le snap point le plus proche
     const findClosestSnapPoint = useCallback((currentY: number, velocity: number) => {
@@ -86,7 +136,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
     }, [getSnapPositions, currentSnapIndex]);
 
     // Gérer la fin du drag
-    const handleDragEnd = useCallback((_: any, info: PanInfo) => {
+    const handleDragEnd = useCallback((_: unknown, info: PanInfo) => {
         const currentY = y.get();
         const { index, position } = findClosestSnapPoint(currentY, info.velocity.y);
 
@@ -110,10 +160,17 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
     const minY = Math.min(...positions); // Position la plus haute (plus petit Y)
     const maxY = Math.max(...positions); // Position la plus basse (plus grand Y)
 
+    // Démarrer le drag depuis le handle
+    const startDrag = (event: React.PointerEvent) => {
+        dragControls.start(event);
+    };
+
     return (
         <motion.div
             ref={containerRef}
             drag="y"
+            dragControls={dragControls}
+            dragListener={false}
             dragConstraints={{ top: minY, bottom: maxY }}
             dragElastic={0.1}
             dragMomentum={false}
@@ -127,14 +184,13 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
                 right: 0,
                 height: windowHeight,
                 zIndex: 1300,
-                touchAction: 'none',
                 willChange: 'transform',
             }}
         >
-            <Box
-                sx={{
-                    height: '100%',
-                    bgcolor: '#FFFFFF',
+            <motion.div
+                style={{
+                    height: useTransform(y, value => windowHeight - value),
+                    backgroundColor: '#FFFFFF',
                     borderTopLeftRadius: 16,
                     borderTopRightRadius: 16,
                     boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
@@ -143,8 +199,10 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
                     overflow: 'hidden',
                 }}
             >
-                {/* Handle - zone de drag */}
+
+                {/* Handle - zone de drag uniquement */}
                 <Box
+                    onPointerDown={startDrag}
                     sx={{
                         pt: 1.5,
                         pb: 1,
@@ -155,6 +213,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
                         bgcolor: '#FFFFFF',
                         borderTopLeftRadius: 16,
                         borderTopRightRadius: 16,
+                        touchAction: 'none',
                         '&:active': {
                             cursor: 'grabbing',
                         }
@@ -170,36 +229,78 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
                     />
                 </Box>
 
-                {/* Header personnalisé */}
-                {headerContent && (
-                    <Box sx={{ flexShrink: 0 }}>
-                        {headerContent}
+                {/* Header avec bouton retour en mode détails */}
+                {showDetails && onBackToList && (
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            px: 1,
+                            pb: 1,
+                            borderBottom: '1px solid #E8EAED',
+                            flexShrink: 0,
+                        }}
+                    >
+                        <IconButton
+                            onClick={onBackToList}
+                            size="small"
+                            sx={{ color: '#5F6368' }}
+                        >
+                            <ArrowBackIcon />
+                        </IconButton>
+                        {detailsTitle && (
+                            <Typography
+                                variant="subtitle1"
+                                sx={{
+                                    ml: 1,
+                                    fontWeight: 500,
+                                    color: '#202124',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                }}
+                            >
+                                {detailsTitle}
+                            </Typography>
+                        )}
                     </Box>
                 )}
 
-                {/* Contenu scrollable */}
+                {/* Contenu scrollable - le scroll fonctionne indépendamment du drag */}
                 <Box
+                    component="div"
+                    onPointerDownCapture={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onTouchMove={(e) => e.stopPropagation()}
                     sx={{
                         flex: 1,
-                        overflowY: currentSnapIndex === 0 ? 'hidden' : 'auto',
+                        overflowY: 'auto',
                         overflowX: 'hidden',
-                        pb: 'env(safe-area-inset-bottom, 16px)',
                         minHeight: 0,
-                        // Empêcher le scroll de déclencher le drag
-                        touchAction: currentSnapIndex === 0 ? 'none' : 'pan-y',
-                    }}
-                    onTouchStart={(e) => {
-                        // Permettre le scroll interne sans déclencher le drag du sheet
-                        if (currentSnapIndex > 0) {
-                            e.stopPropagation();
-                        }
+                        WebkitOverflowScrolling: 'touch',
+                        touchAction: 'pan-y',
                     }}
                 >
-                    {children}
+                    {/* Liste des résultats */}
+                    {!showDetails && (
+                        <Box sx={{ pb: 'max(80px, env(safe-area-inset-bottom, 80px))' }}>
+                            {children}
+                        </Box>
+                    )}
+
+                    {/* Détails */}
+                    {showDetails && (
+                        <Box sx={{ pb: 'max(80px, env(safe-area-inset-bottom, 80px))' }}>
+                            {detailsContent}
+                        </Box>
+                    )}
                 </Box>
-            </Box>
+            </motion.div>
         </motion.div>
+
     );
-};
+});
+
+BottomSheet.displayName = 'BottomSheet';
 
 export default BottomSheet;

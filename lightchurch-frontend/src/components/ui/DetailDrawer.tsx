@@ -605,28 +605,34 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
                                 position: 'relative'
                             }}
                         >
-                            <IconButton
-                                onClick={handleClose}
-                                aria-label="Fermer"
-                                sx={{
-                                    position: 'absolute',
-                                    top: 8,
-                                    right: 8,
-                                    backgroundColor: '#FFFFFF',
-                                    color: '#5F6368',
-                                    boxShadow: '0 1px 2px 0 rgba(60,64,67,0.3)',
-                                    '&:hover': { backgroundColor: '#F8F9FA' }
-                                }}
-                            >
-                                <Close />
-                            </IconButton>
+                            {/* Croix uniquement si pas embedded (en embedded, on a le bouton retour du BottomSheet) */}
+                            {!embedded && (
+                                <IconButton
+                                    onClick={handleClose}
+                                    aria-label="Fermer"
+                                    sx={{
+                                        position: 'absolute',
+                                        top: 8,
+                                        right: 8,
+                                        backgroundColor: '#FFFFFF',
+                                        color: '#5F6368',
+                                        boxShadow: '0 1px 2px 0 rgba(60,64,67,0.3)',
+                                        '&:hover': { backgroundColor: '#F8F9FA' }
+                                    }}
+                                >
+                                    <Close />
+                                </IconButton>
+                            )}
                         </Box>
                     );
                 }
 
-                // Render just Close button if no image
-                // On Mobile Bottom Sheet, a close button might be redundant if we have a handle, 
-                // but let's keep it for accessibility and explicit action.
+                // En mode embedded, pas besoin de bouton close (on a le bouton retour du BottomSheet)
+                if (embedded) {
+                    return null;
+                }
+
+                // Render just Close button if no image (desktop/drawer mode only)
                 return (
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
                         <IconButton
@@ -654,8 +660,9 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
     ) : null;
 
     if (embedded) {
+        // En mode embedded (dans le BottomSheet), pas de scroll ici - le BottomSheet gère le scroll
         return (
-            <Box sx={{ height: '100%', overflowY: 'auto', bgcolor: '#fff' }}>
+            <Box sx={{ bgcolor: '#fff' }}>
                 {innerContent}
             </Box>
         );
