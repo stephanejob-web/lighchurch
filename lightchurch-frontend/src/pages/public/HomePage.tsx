@@ -832,6 +832,15 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
         return () => window.removeEventListener('light_church:interests_updated', refresh);
     }, []);
 
+    // ========== SYNC DRAWER WITH MODE ==========
+    useEffect(() => {
+        if (viewMode === 'participations') {
+            setDetailDrawerOpen(false);
+            setSelectedItem(null);
+            setDrawerHistory([]);
+        }
+    }, [viewMode]);
+
     // ========== HANDLE URL PARAM church_id (Aperçu Public) ==========
     useEffect(() => {
         const churchId = searchParams.get('church_id');

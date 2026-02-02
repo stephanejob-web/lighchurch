@@ -165,6 +165,14 @@ const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(({
         dragControls.start(event);
     };
 
+    // Reset scroll when details change
+    const scrollRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTo(0, 0);
+        }
+    }, [showDetails, detailsTitle]);
+
     return (
         <motion.div
             ref={containerRef}
@@ -303,6 +311,7 @@ const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(({
 
                 {/* Contenu scrollable - le scroll fonctionne indépendamment du drag */}
                 <Box
+                    ref={scrollRef}
                     component="div"
                     onPointerDownCapture={(e) => e.stopPropagation()}
                     onTouchStart={(e) => e.stopPropagation()}

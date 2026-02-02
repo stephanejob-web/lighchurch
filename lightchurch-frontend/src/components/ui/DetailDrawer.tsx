@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Drawer, Box, Typography, Button, IconButton, Skeleton, Divider, Chip, Link, Stack, Alert, useTheme, useMediaQuery } from '@mui/material';
 import { Close, Directions, PunchClock, Call, Language, LocationOn, LocalParking, Accessible, Mic, Person, People, Euro, YouTube, InsertLink, CancelOutlined, Info, Email, Translate, Facebook, Instagram, Twitter, LinkedIn, WhatsApp, EventBusy, ArrowBack } from '@mui/icons-material';
 import type { ChurchDetails, EventDetails } from '../../types/publicMap';
@@ -53,6 +53,14 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
     const [overrideData, setOverrideData] = useState<ChurchDetails | null>(null);
     const [overrideType, setOverrideType] = useState<'church' | 'event' | null>(null);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    // Reset scroll when data changes
+    useEffect(() => {
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTo(0, 0);
+        }
+    }, [data?.id, type, overrideData?.id, overrideType]);
 
     const handleClose = () => {
         setOverrideData(null);
@@ -665,12 +673,15 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
         // En mode embedded (dans le BottomSheet), pas de scroll ici sur mobile - le BottomSheet gère le scroll
         // Mais sur desktop, le DetailDrawer doit être scrollable lui-même
         return (
-            <Box sx={{ 
-                bgcolor: '#fff', 
-                height: '100%', 
-                overflowY: isMobile ? 'visible' : 'auto',
-                position: 'relative'
-            }}>
+            <Box 
+                ref={scrollContainerRef}
+                sx={{ 
+                    bgcolor: '#fff', 
+                    height: '100%', 
+                    overflowY: isMobile ? 'visible' : 'auto',
+                    position: 'relative'
+                }}
+            >
                 {innerContent}
             </Box>
         );
@@ -727,7 +738,10 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
                                 borderRadius: 2.5
                             }} />
                         </Box>
-                        <Box sx={{ overflowY: 'auto', flex: 1, pb: 'max(24px, env(safe-area-inset-bottom, 24px))' }}>
+                        <Box 
+                            ref={scrollContainerRef}
+                            sx={{ overflowY: 'auto', flex: 1, pb: 'max(24px, env(safe-area-inset-bottom, 24px))' }}
+                        >
                             {innerContent}
                         </Box>
                     </VaulDrawer.Content>
