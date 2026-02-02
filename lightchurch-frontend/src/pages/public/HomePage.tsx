@@ -1201,7 +1201,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                     userLocation={userLocation}
                     participationsCount={participations.size}
                     onParticipationsClick={() => navigate('/my-participations')}
-                    onHomeClick={() => navigate('/map')}
+                    onHomeClick={() => navigate('/')}
                 />
             </MapContainer>
 
