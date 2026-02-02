@@ -1195,7 +1195,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                         exit={{ x: '20%', opacity: 0 }}
                                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                                         style={{
-                                            height: '100%',
+                                            flex: 1,
                                             display: 'flex',
                                             flexDirection: 'column',
                                             minHeight: 0,
@@ -1235,7 +1235,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                         animate={{ x: 0, opacity: 1 }}
                                         exit={{ x: -20, opacity: 0 }}
                                         transition={{ duration: 0.2 }}
-                                        style={{ height: '100%' }}
+                                        style={{ flex: 1, minHeight: 0 }}
                                     >
                                         <MyParticipationsSidebar onEventClick={(e) => handleMarkerClick(e, 'event')} />
                                     </motion.div>
@@ -1247,7 +1247,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                         exit={{ opacity: 0 }}
                                         transition={{ duration: 0.2 }}
                                         style={{
-                                            height: '100%',
+                                            flex: 1,
                                             display: 'flex',
                                             flexDirection: 'column',
                                             minHeight: 0,
