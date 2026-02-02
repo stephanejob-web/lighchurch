@@ -279,7 +279,7 @@ EventCard.displayName = 'EventCard';
 /**
  * ResultsPanel avec pagination serveur
  */
-const SNAP_POINTS = [15, 50, 90]; // Pourcentages de la hauteur de l'écran
+const SNAP_POINTS = [15, 50, 75]; // Pourcentages de la hauteur de l'écran (75% max pour laisser la SearchPanel visible)
 
 const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
     onChurchClick,
@@ -512,7 +512,7 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
     const showSearchBar = totalBeforeFilter > 15 || searchQuery.length > 0;
 
     const content = (
-        <Box sx={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', backgroundColor: '#FFFFFF' }}>
+        <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', backgroundColor: '#FFFFFF' }}>
             {/* En-tête */}
             <Box sx={{ p: 2, borderBottom: '1px solid #E8EAED' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
