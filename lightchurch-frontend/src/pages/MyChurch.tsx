@@ -405,7 +405,7 @@ export default function MyChurch() {
                                         {/* Champs d'adresse détaillés (lecture seule, auto-remplis) */}
                                         <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
                                             <Grid container spacing={2}>
-                                                <Grid size={{ xs: 12, md: 3 }}>
+                                                <Grid xs={12} md={3}>
                                                     <TextField
                                                         {...register('street_number')}
                                                         fullWidth
@@ -418,7 +418,7 @@ export default function MyChurch() {
                                                         helperText={errors.street_number?.message}
                                                     />
                                                 </Grid>
-                                                <Grid size={{ xs: 12, md: 9 }}>
+                                                <Grid xs={12} md={9}>
                                                     <TextField
                                                         {...register('street_name')}
                                                         fullWidth
@@ -431,7 +431,7 @@ export default function MyChurch() {
                                                         helperText={errors.street_name?.message}
                                                     />
                                                 </Grid>
-                                                <Grid size={{ xs: 12, md: 3 }}>
+                                                <Grid xs={12} md={3}>
                                                     <TextField
                                                         {...register('postal_code')}
                                                         fullWidth
@@ -444,7 +444,7 @@ export default function MyChurch() {
                                                         helperText={errors.postal_code?.message}
                                                     />
                                                 </Grid>
-                                                <Grid size={{ xs: 12, md: 9 }}>
+                                                <Grid xs={12} md={9}>
                                                     <TextField
                                                         {...register('city')}
                                                         fullWidth
@@ -463,7 +463,7 @@ export default function MyChurch() {
                                         {/* Coordonnées GPS (lecture seule, auto-remplies) */}
                                         <Box sx={{ p: 2, bgcolor: 'rgba(33, 150, 243, 0.1)', borderRadius: 1, border: 1, borderColor: 'info.light' }}>
                                             <Grid container spacing={2}>
-                                                <Grid size={{ xs: 12, md: 6 }}>
+                                                <Grid xs={12} md={6}>
                                                     <TextField
                                                         {...register('latitude', { valueAsNumber: true })}
                                                         fullWidth
@@ -476,7 +476,7 @@ export default function MyChurch() {
                                                         helperText={errors.latitude?.message}
                                                     />
                                                 </Grid>
-                                                <Grid size={{ xs: 12, md: 6 }}>
+                                                <Grid xs={12} md={6}>
                                                     <TextField
                                                         {...register('longitude', { valueAsNumber: true })}
                                                         fullWidth
@@ -563,7 +563,7 @@ export default function MyChurch() {
                                     Pasteur Principal
                                 </Typography>
                                 <Grid container spacing={2}>
-                                    <Grid size={{ xs: 12, md: 6 }}>
+                                    <Grid xs={12} md={6}>
                                         <TextField
                                             {...register('pastor_first_name')}
                                             fullWidth
@@ -574,7 +574,7 @@ export default function MyChurch() {
                                             helperText={errors.pastor_first_name?.message}
                                         />
                                     </Grid>
-                                    <Grid size={{ xs: 12, md: 6 }}>
+                                    <Grid xs={12} md={6}>
                                         <TextField
                                             {...register('pastor_last_name')}
                                             fullWidth
@@ -588,7 +588,7 @@ export default function MyChurch() {
                                 </Grid>
 
                                 <Grid container spacing={2}>
-                                    <Grid size={{ xs: 12, md: 6 }}>
+                                    <Grid xs={12} md={6}>
                                         <TextField
                                             {...register('phone')}
                                             fullWidth
@@ -599,7 +599,7 @@ export default function MyChurch() {
                                             helperText={errors.phone?.message}
                                         />
                                     </Grid>
-                                    <Grid size={{ xs: 12, md: 6 }}>
+                                    <Grid xs={12} md={6}>
                                         <TextField
                                             {...register('website')}
                                             fullWidth
@@ -628,7 +628,7 @@ export default function MyChurch() {
                                         {has_parking && (
                                             <Box sx={{ pl: 4 }}>
                                                 <Grid container spacing={2}>
-                                                    <Grid size={{ xs: 12, md: 6 }}>
+                                                    <Grid xs={12} md={6}>
                                                         <TextField
                                                             {...register('parking_capacity', { valueAsNumber: true })}
                                                             fullWidth
@@ -638,7 +638,7 @@ export default function MyChurch() {
                                                             helperText={errors.parking_capacity?.message}
                                                         />
                                                     </Grid>
-                                                    <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex', alignItems: 'center' }}>
+                                                    <Grid xs={12} md={6} sx={{ display: 'flex', alignItems: 'center' }}>
                                                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                                             <input
                                                                 type="checkbox"

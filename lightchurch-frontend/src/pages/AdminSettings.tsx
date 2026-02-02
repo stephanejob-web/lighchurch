@@ -179,7 +179,7 @@ export default function AdminSettings() {
             {/* LANGUAGES */}
             {activeTab === 0 && (
                 <Grid container spacing={3}>
-                    <Grid size={{ xs: 12, lg: 6 }}>
+                    <Grid xs={12} lg={6}>
                         <Card>
                             <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                                 <Typography variant="h6" sx={{ mb: 2 }}>
@@ -229,7 +229,7 @@ export default function AdminSettings() {
                             </CardContent>
                         </Card>
                     </Grid>
-                    <Grid size={{ xs: 12, lg: 6 }}>
+                    <Grid xs={12} lg={6}>
                         <Card>
                             <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                                 <Typography variant="h6" sx={{ mb: 2 }}>Langues Actives</Typography>
@@ -261,7 +261,7 @@ export default function AdminSettings() {
             {/* ACTIVITY TYPES */}
             {activeTab === 1 && (
                 <Grid container spacing={3}>
-                    <Grid size={{ xs: 12, lg: 6 }}>
+                    <Grid xs={12} lg={6}>
                         <Card>
                             <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                                 <Typography variant="h6" sx={{ mb: 2 }}>
@@ -305,7 +305,7 @@ export default function AdminSettings() {
                             </CardContent>
                         </Card>
                     </Grid>
-                    <Grid size={{ xs: 12, lg: 6 }}>
+                    <Grid xs={12} lg={6}>
                         <Card>
                             <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                                 <Typography variant="h6" sx={{ mb: 2 }}>Types Actifs</Typography>
@@ -337,7 +337,7 @@ export default function AdminSettings() {
             {/* DENOMINATIONS */}
             {activeTab === 2 && (
                 <Grid container spacing={3}>
-                    <Grid size={{ xs: 12, lg: 6 }}>
+                    <Grid xs={12} lg={6}>
                         <Card>
                             <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                                 <Typography variant="h6" sx={{ mb: 2 }}>
@@ -397,7 +397,7 @@ export default function AdminSettings() {
                             </CardContent>
                         </Card>
                     </Grid>
-                    <Grid size={{ xs: 12, lg: 6 }}>
+                    <Grid xs={12} lg={6}>
                         <Card>
                             <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                                 <Typography variant="h6" sx={{ mb: 2 }}>

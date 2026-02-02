@@ -133,7 +133,7 @@ export default function ManualAddressInput({ onAddressSelect, defaultValue }: Ma
                 </Typography>
 
                 <Grid container spacing={2}>
-                    <Grid size={{ xs: 12, sm: 3 }}>
+                    <Grid xs={12} sm={3}>
                         <TextField
                             fullWidth
                             label="N° de rue"
@@ -143,7 +143,7 @@ export default function ManualAddressInput({ onAddressSelect, defaultValue }: Ma
                             helperText="Optionnel"
                         />
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 9 }}>
+                    <Grid xs={12} sm={9}>
                         <TextField
                             fullWidth
                             required
@@ -155,7 +155,7 @@ export default function ManualAddressInput({ onAddressSelect, defaultValue }: Ma
                             helperText={errors.streetName}
                         />
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 4 }}>
+                    <Grid xs={12} sm={4}>
                         <TextField
                             fullWidth
                             required
@@ -167,7 +167,7 @@ export default function ManualAddressInput({ onAddressSelect, defaultValue }: Ma
                             helperText={errors.postalCode}
                         />
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 8 }}>
+                    <Grid xs={12} sm={8}>
                         <TextField
                             fullWidth
                             required
@@ -189,7 +189,7 @@ export default function ManualAddressInput({ onAddressSelect, defaultValue }: Ma
                 </Typography>
 
                 <Grid container spacing={2} sx={{ mb: 2 }}>
-                    <Grid size={{ xs: 12, sm: 6 }}>
+                    <Grid xs={12} sm={6}>
                         <TextField
                             fullWidth
                             required
@@ -202,7 +202,7 @@ export default function ManualAddressInput({ onAddressSelect, defaultValue }: Ma
                             inputProps={{ step: 0.000001 }}
                         />
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>
+                    <Grid xs={12} sm={6}>
                         <TextField
                             fullWidth
                             required

@@ -148,7 +148,7 @@ export default function AdminChurches() {
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                         {/* GENERAL */}
                         <Grid container spacing={2}>
-                            <Grid size={{ xs: 12, md: 6 }}>
+                            <Grid xs={12} md={6}>
                                 <TextField
                                     fullWidth
                                     label="Nom"
@@ -156,7 +156,7 @@ export default function AdminChurches() {
                                     onChange={e => updateField('church_name', e.target.value)}
                                 />
                             </Grid>
-                            <Grid size={{ xs: 12, md: 6 }}>
+                            <Grid xs={12} md={6}>
                                 <FormControl fullWidth>
                                     <InputLabel>Dénomination</InputLabel>
                                     <Select
@@ -168,7 +168,7 @@ export default function AdminChurches() {
                                     </Select>
                                 </FormControl>
                             </Grid>
-                            <Grid size={{ xs: 12, md: 6 }}>
+                            <Grid xs={12} md={6}>
                                 <TextField
                                     fullWidth
                                     label="Latitude"
@@ -176,7 +176,7 @@ export default function AdminChurches() {
                                     onChange={e => updateField('latitude', e.target.value)}
                                 />
                             </Grid>
-                            <Grid size={{ xs: 12, md: 6 }}>
+                            <Grid xs={12} md={6}>
                                 <TextField
                                     fullWidth
                                     label="Longitude"
@@ -190,7 +190,7 @@ export default function AdminChurches() {
                         <Box sx={{ pt: 2, borderTop: 1, borderColor: 'divider' }}>
                             <Typography variant="h6" sx={{ mb: 2 }}>Détails de contact</Typography>
                             <Grid container spacing={2}>
-                                <Grid size={{ xs: 12, md: 6 }}>
+                                <Grid xs={12} md={6}>
                                     <TextField
                                         fullWidth
                                         label="Adresse"
@@ -198,7 +198,7 @@ export default function AdminChurches() {
                                         onChange={e => updateField('address', e.target.value)}
                                     />
                                 </Grid>
-                                <Grid size={{ xs: 12, md: 6 }}>
+                                <Grid xs={12} md={6}>
                                     <TextField
                                         fullWidth
                                         label="Téléphone"
@@ -206,7 +206,7 @@ export default function AdminChurches() {
                                         onChange={e => updateField('phone', e.target.value)}
                                     />
                                 </Grid>
-                                <Grid size={{ xs: 12, md: 6 }}>
+                                <Grid xs={12} md={6}>
                                     <TextField
                                         fullWidth
                                         label="Site Web"
@@ -214,7 +214,7 @@ export default function AdminChurches() {
                                         onChange={e => updateField('website', e.target.value)}
                                     />
                                 </Grid>
-                                <Grid size={{ xs: 12, md: 6 }}>
+                                <Grid xs={12} md={6}>
                                     <TextField
                                         fullWidth
                                         label="Pasteur Principal"
@@ -222,7 +222,7 @@ export default function AdminChurches() {
                                         onChange={e => updateField('pastor_name', e.target.value)}
                                     />
                                 </Grid>
-                                <Grid size={{ xs: 12 }}>
+                                <Grid xs={12}>
                                     <TextField
                                         fullWidth
                                         label="Description"
@@ -345,7 +345,7 @@ export default function AdminChurches() {
                 <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                     <Grid container spacing={2}>
                         {/* Search */}
-                        <Grid size={{ xs: 12, md: 4 }}>
+                        <Grid xs={12} md={4}>
                             <TextField
                                 fullWidth
                                 placeholder="Nom d'église, ville, pasteur..."
@@ -363,7 +363,7 @@ export default function AdminChurches() {
                         </Grid>
 
                         {/* Denomination Filter */}
-                        <Grid size={{ xs: 12, md: 4 }}>
+                        <Grid xs={12} md={4}>
                             <FormControl fullWidth>
                                 <InputLabel>Dénomination</InputLabel>
                                 <Select
@@ -380,7 +380,7 @@ export default function AdminChurches() {
                         </Grid>
 
                         {/* City Filter */}
-                        <Grid size={{ xs: 12, md: 4 }}>
+                        <Grid xs={12} md={4}>
                             <FormControl fullWidth>
                                 <InputLabel>Ville</InputLabel>
                                 <Select

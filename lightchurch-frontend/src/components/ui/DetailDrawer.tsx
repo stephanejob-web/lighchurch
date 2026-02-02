@@ -757,17 +757,15 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
             open={open}
             onClose={handleClose}
             variant="persistent"
-            slotProps={{
-                paper: {
-                    sx: {
-                        width: 400,
-                        height: '100%',
-                        top: 0,
-                        bottom: 0,
-                        boxShadow: '0 1px 2px 0 rgba(60,64,67,0.3), 0 2px 6px 2px rgba(60,64,67,0.15)',
-                        zIndex: 2200,
-                        bgcolor: '#FFFFFF'
-                    }
+            PaperProps={{
+                sx: {
+                    width: 400,
+                    height: '100%',
+                    top: 0,
+                    bottom: 0,
+                    boxShadow: '0 1px 2px 0 rgba(60,64,67,0.3), 0 2px 6px 2px rgba(60,64,67,0.15)',
+                    zIndex: 2200,
+                    bgcolor: '#FFFFFF'
                 }
             }}
         >

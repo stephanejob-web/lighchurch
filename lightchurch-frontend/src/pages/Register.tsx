@@ -229,7 +229,7 @@ export default function Register() {
 
               {/* First Name & Last Name */}
               <Grid container spacing={2} sx={{ mb: 2.5 }}>
-                <Grid size={{ xs: 12, sm: 6 }}>
+                <Grid xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label={
@@ -242,7 +242,7 @@ export default function Register() {
                   />
                   <FormError error={errors.first_name} />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
+                <Grid xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label={

@@ -191,7 +191,7 @@ export default function AdminUsers() {
                 <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                     <Grid container spacing={2}>
                         {/* Search */}
-                        <Grid size={{ xs: 12, md: 6 }}>
+                        <Grid xs={12} md={6}>
                             <TextField
                                 fullWidth
                                 placeholder="Nom, prénom, email..."
@@ -209,7 +209,7 @@ export default function AdminUsers() {
                         </Grid>
 
                         {/* Role Filter */}
-                        <Grid size={{ xs: 12, md: 6 }}>
+                        <Grid xs={12} md={6}>
                             <FormControl fullWidth>
                                 <InputLabel>Rôle</InputLabel>
                                 <Select
@@ -502,29 +502,29 @@ export default function AdminUsers() {
                 </DialogTitle>
                 <DialogContent dividers>
                     <Grid container spacing={2}>
-                        <Grid size={{ xs: 12, md: 6 }}>
+                        <Grid xs={12} md={6}>
                             <Typography variant="caption" color="text.secondary">Adresse</Typography>
                             <Typography>{viewingChurch?.details?.address || '-'}</Typography>
                         </Grid>
-                        <Grid size={{ xs: 12, md: 6 }}>
+                        <Grid xs={12} md={6}>
                             <Typography variant="caption" color="text.secondary">Téléphone</Typography>
                             <Typography>{viewingChurch?.details?.phone || '-'}</Typography>
                         </Grid>
-                        <Grid size={{ xs: 12, md: 6 }}>
+                        <Grid xs={12} md={6}>
                             <Typography variant="caption" color="text.secondary">Site Web</Typography>
                             <Typography>{viewingChurch?.details?.website || '-'}</Typography>
                         </Grid>
-                        <Grid size={{ xs: 12, md: 6 }}>
+                        <Grid xs={12} md={6}>
                             <Typography variant="caption" color="text.secondary">Pasteur Principal</Typography>
                             <Typography>{viewingChurch?.details?.pastor_name || '-'}</Typography>
                         </Grid>
-                        <Grid size={{ xs: 12, md: 6 }}>
+                        <Grid xs={12} md={6}>
                             <Typography variant="caption" color="text.secondary">Position</Typography>
                             <Typography variant="body2">
                                 Lat: {viewingChurch?.latitude?.toFixed(6)}, Lng: {viewingChurch?.longitude?.toFixed(6)}
                             </Typography>
                         </Grid>
-                        <Grid size={{ xs: 12, md: 6 }}>
+                        <Grid xs={12} md={6}>
                             <Typography variant="caption" color="text.secondary">Parking</Typography>
                             <Typography>
                                 {viewingChurch?.details?.has_parking ? 'Oui' : 'Non'}
@@ -532,14 +532,14 @@ export default function AdminUsers() {
                                     ` (${viewingChurch.details.parking_capacity} places)`}
                             </Typography>
                         </Grid>
-                        <Grid size={{ xs: 12 }}>
+                        <Grid xs={12}>
                             <Typography variant="caption" color="text.secondary">Description</Typography>
                             <Typography variant="body2">
                                 {viewingChurch?.details?.description || 'Aucune description'}
                             </Typography>
                         </Grid>
                         {viewingChurch?.socials && viewingChurch.socials.length > 0 && (
-                            <Grid size={{ xs: 12 }}>
+                            <Grid xs={12}>
                                 <Typography variant="caption" color="text.secondary">Réseaux Sociaux</Typography>
                                 <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
                                     {viewingChurch.socials.map((social: any, idx: number) => (

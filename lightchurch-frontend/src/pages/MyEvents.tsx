@@ -903,7 +903,7 @@ export default function MyEvents() {
                         </Box>
 
                         <Grid container spacing={3}>
-                            <Grid size={{ xs: 12 }}>
+                            <Grid xs={12}>
                                 <TextField
                                     id="title"
                                     fullWidth
@@ -924,7 +924,7 @@ export default function MyEvents() {
                                 />
                             </Grid>
 
-                            <Grid size={{ xs: 12, md: 6 }}>
+                            <Grid xs={12} md={6}>
                                 <TextField
                                     id="speaker_name"
                                     fullWidth
@@ -945,7 +945,7 @@ export default function MyEvents() {
                                 />
                             </Grid>
 
-                            <Grid size={{ xs: 12 }}>
+                            <Grid xs={12}>
                                 <TextField
                                     id="description"
                                     fullWidth
@@ -989,7 +989,7 @@ export default function MyEvents() {
                                 />
                             </Grid>
 
-                            <Grid size={{ xs: 12 }}>
+                            <Grid xs={12}>
                                 <TextField
                                     id="image_url"
                                     fullWidth
@@ -1120,7 +1120,7 @@ export default function MyEvents() {
                         </Box>
 
                         <Grid container spacing={3}>
-                            <Grid size={{ xs: 12, md: 6 }}>
+                            <Grid xs={12} md={6}>
                                 <DateTimeInput
                                     label={formData.is_all_day ? "Date de début" : "Date et heure de début"}
                                     value={formData.start_datetime}
@@ -1141,7 +1141,7 @@ export default function MyEvents() {
                                 />
                             </Grid>
 
-                            <Grid size={{ xs: 12, md: 6 }}>
+                            <Grid xs={12} md={6}>
                                 <DateTimeInput
                                     label={formData.is_all_day ? "Date de fin" : "Date et heure de fin"}
                                     value={formData.end_datetime}
@@ -1176,7 +1176,7 @@ export default function MyEvents() {
                         </Divider>
 
                         <Grid container spacing={3}>
-                            <Grid size={{ xs: 12, md: 6 }}>
+                            <Grid xs={12} md={6}>
                                 <FormControl fullWidth required>
                                     <InputLabel>Langue principale du speaker</InputLabel>
                                     <Select
@@ -1197,7 +1197,7 @@ export default function MyEvents() {
                                 </FormControl>
                             </Grid>
 
-                            <Grid size={{ xs: 12, md: 6 }}>
+                            <Grid xs={12} md={6}>
                                 <FormControl fullWidth>
                                     <InputLabel>Traductions disponibles (optionnel)</InputLabel>
                                     <Select
@@ -1335,7 +1335,7 @@ export default function MyEvents() {
                                 Adresse décomposée
                             </Typography>
                             <Grid container spacing={2}>
-                                <Grid size={{ xs: 3 }}>
+                                <Grid xs={3}>
                                     <TextField
                                         fullWidth
                                         size="small"
@@ -1345,7 +1345,7 @@ export default function MyEvents() {
                                         placeholder="Auto"
                                     />
                                 </Grid>
-                                <Grid size={{ xs: 9 }}>
+                                <Grid xs={9}>
                                     <TextField
                                         fullWidth
                                         size="small"
@@ -1355,7 +1355,7 @@ export default function MyEvents() {
                                         placeholder="Auto-rempli"
                                     />
                                 </Grid>
-                                <Grid size={{ xs: 4 }}>
+                                <Grid xs={4}>
                                     <TextField
                                         fullWidth
                                         size="small"
@@ -1365,7 +1365,7 @@ export default function MyEvents() {
                                         placeholder="Auto"
                                     />
                                 </Grid>
-                                <Grid size={{ xs: 8 }}>
+                                <Grid xs={8}>
                                     <TextField
                                         fullWidth
                                         size="small"
@@ -1383,7 +1383,7 @@ export default function MyEvents() {
                                 Coordonnées GPS (auto-calculées)
                             </Typography>
                             <Grid container spacing={2}>
-                                <Grid size={{ xs: 12, md: 6 }}>
+                                <Grid xs={12} md={6}>
                                     <TextField
                                         fullWidth
                                         size="small"
@@ -1400,7 +1400,7 @@ export default function MyEvents() {
                                         placeholder="Auto-calculé"
                                     />
                                 </Grid>
-                                <Grid size={{ xs: 12, md: 6 }}>
+                                <Grid xs={12} md={6}>
                                     <TextField
                                         fullWidth
                                         size="small"
@@ -1437,7 +1437,7 @@ export default function MyEvents() {
                         {formData.has_parking === 1 && (
                             <Paper elevation={0} sx={{ p: 3, bgcolor: 'action.hover', borderRadius: 2 }}>
                                 <Grid container spacing={2}>
-                                    <Grid size={{ xs: 12, md: 6 }}>
+                                    <Grid xs={12} md={6}>
                                         <TextField
                                             id="parking_capacity"
                                             fullWidth
@@ -1448,7 +1448,7 @@ export default function MyEvents() {
                                             placeholder="Nombre de places"
                                         />
                                     </Grid>
-                                    <Grid size={{ xs: 12, md: 6 }}>
+                                    <Grid xs={12} md={6}>
                                         <TextField
                                             id="parking_details"
                                             fullWidth
@@ -1458,7 +1458,7 @@ export default function MyEvents() {
                                             placeholder="Code, entrée, indications..."
                                         />
                                     </Grid>
-                                    <Grid size={{ xs: 12 }}>
+                                    <Grid xs={12}>
                                         <FormControlLabel
                                             control={
                                                 <Checkbox
@@ -1489,7 +1489,7 @@ export default function MyEvents() {
                         </Box>
 
                         <Grid container spacing={3}>
-                            <Grid size={{ xs: 12, md: 6 }}>
+                            <Grid xs={12} md={6}>
                                 <TextField
                                     id="max_seats"
                                     fullWidth
@@ -1510,7 +1510,7 @@ export default function MyEvents() {
                                 />
                             </Grid>
 
-                            <Grid size={{ xs: 12, md: 6 }}>
+                            <Grid xs={12} md={6}>
                                 <TextField
                                     id="youtube_live"
                                     fullWidth
@@ -2161,7 +2161,7 @@ export default function MyEvents() {
             ) : viewMode === 'grid' ? (
                 <Grid container spacing={3}>
                     {paginatedEvents.length === 0 ? (
-                        <Grid size={{ xs: 12 }}>
+                        <Grid xs={12}>
                             <Box sx={{ textAlign: 'center', py: 8 }}>
                                 <SearchIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
                                 <Typography variant="h6" color="text.secondary">
@@ -2187,7 +2187,7 @@ export default function MyEvents() {
                             </Box>
                         </Grid>
                     ) : paginatedEvents.map((event) => (
-                        <Grid size={{ xs: 12, md: 6, lg: 4 }} key={event.id}>
+                        <Grid xs={12} md={6} lg={4} key={event.id}>
                             <Card sx={{
                                 overflow: 'hidden',
                                 transition: 'all 0.3s',
@@ -2480,7 +2480,7 @@ export default function MyEvents() {
                         </Grid>
                     ))}
 
-                    <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+                    <Grid xs={12} md={6} lg={4}>
                         <Box
                             onClick={() => { setShowForm(true); setEditingId(null); setFormData(initialFormState); setActiveStep(0); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                             sx={{
