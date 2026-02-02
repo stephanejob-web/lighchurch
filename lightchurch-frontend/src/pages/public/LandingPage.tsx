@@ -16,7 +16,6 @@ import {
     Search,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import lightChurchLogo from '../../assets/light-church.png';
 import ParticleBackground from '../../components/landing/ParticleBackground';
 
 const MotionBox = motion(Box);
@@ -102,8 +101,43 @@ const LandingPage: React.FC = () => {
             >
                 <Container maxWidth="lg">
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <img src={lightChurchLogo} alt="Light Church" style={{ height: 36 }} />
+                        <Box 
+                            sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: 1, 
+                                cursor: 'pointer' 
+                            }}
+                            onClick={() => navigate('/')}
+                        >
+                            <Typography
+                                variant="h6"
+                                sx={{
+                                    fontWeight: 800,
+                                    letterSpacing: '-0.5px',
+                                    background: 'linear-gradient(90deg, #fff 0%, #aaa 100%)',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    fontSize: '1.4rem'
+                                }}
+                            >
+                                Lightchurch
+                            </Typography>
+                            <Box
+                                sx={{
+                                    bgcolor: '#4285F4',
+                                    color: 'white',
+                                    px: 0.8,
+                                    py: 0.2,
+                                    borderRadius: 1,
+                                    fontSize: '0.65rem',
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: 1
+                                }}
+                            >
+                                Pro
+                            </Box>
                         </Box>
 
                         <Stack direction="row" spacing={4} sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}>
@@ -542,36 +576,34 @@ const LandingPage: React.FC = () => {
 
                             <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
                                 <Box
+                                    component="a"
+                                    href="#"
                                     sx={{
-                                        bgcolor: 'rgba(255, 255, 255, 0.05)',
-                                        p: 1.5,
-                                        px: 2.5,
-                                        borderRadius: 3,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 1.5,
-                                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                                        opacity: 0.5
+                                        display: 'block',
+                                        transition: 'transform 0.2s',
+                                        '&:hover': { transform: 'scale(1.05)' }
                                     }}
                                 >
-                                    <Typography sx={{ fontSize: '1.5rem' }}>🍎</Typography>
-                                    <Typography sx={{ fontWeight: 500, fontSize: '0.9rem' }}>App Store</Typography>
+                                    <img 
+                                        src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83&amp;releaseDate=1314316800&h=6ae73b1854f3b7ba828ee54c126f3e5b" 
+                                        alt="Download on the App Store" 
+                                        style={{ height: 44 }}
+                                    />
                                 </Box>
                                 <Box
+                                    component="a"
+                                    href="#"
                                     sx={{
-                                        bgcolor: 'rgba(255, 255, 255, 0.05)',
-                                        p: 1.5,
-                                        px: 2.5,
-                                        borderRadius: 3,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 1.5,
-                                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                                        opacity: 0.5
+                                        display: 'block',
+                                        transition: 'transform 0.2s',
+                                        '&:hover': { transform: 'scale(1.05)' }
                                     }}
                                 >
-                                    <Typography sx={{ fontSize: '1.5rem' }}>▶️</Typography>
-                                    <Typography sx={{ fontWeight: 500, fontSize: '0.9rem' }}>Google Play</Typography>
+                                    <img 
+                                        src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" 
+                                        alt="Get it on Google Play" 
+                                        style={{ height: 60, marginTop: -8 }}
+                                    />
                                 </Box>
                             </Stack>
 
@@ -611,83 +643,34 @@ const LandingPage: React.FC = () => {
                                 />
 
                                 {/* Screen Content */}
-                                <Box sx={{ p: 2, pt: 5, height: '100%', bgcolor: '#0a0a0a' }}>
-                                    {/* Search Bar */}
-                                    <Box
-                                        sx={{
-                                            bgcolor: 'rgba(255,255,255,0.08)',
-                                            borderRadius: 3,
-                                            p: 1.5,
-                                            mb: 2,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 1
+                                <Box sx={{ height: '100%', bgcolor: '#000', position: 'relative' }}>
+                                    <video
+                                        autoPlay
+                                        loop
+                                        muted
+                                        playsInline
+                                        style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'cover'
                                         }}
                                     >
-                                        <Search size={16} color="rgba(255,255,255,0.4)" />
-                                        <Typography sx={{ fontSize: '0.75rem', opacity: 0.4 }}>
-                                            Search places or address
-                                        </Typography>
-                                    </Box>
-
-                                    {/* Map Placeholder */}
+                                        <source src="/mobile.mp4" type="video/mp4" />
+                                        Your browser does not support the video tag.
+                                    </video>
+                                    
+                                    {/* Overlay Gradient for Notch visibility */}
                                     <Box
                                         sx={{
-                                            height: 300,
-                                            bgcolor: 'rgba(255,255,255,0.03)',
-                                            borderRadius: 3,
-                                            mb: 2,
-                                            display: 'flex',
-                                            justifyContent: 'center',
-                                            alignItems: 'center',
-                                            position: 'relative',
-                                            overflow: 'hidden',
-                                            background: 'linear-gradient(135deg, rgba(66,133,244,0.1) 0%, rgba(52,168,83,0.1) 100%)'
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            right: 0,
+                                            height: 50,
+                                            background: 'linear-gradient(to bottom, rgba(0,0,0,0.5), transparent)',
+                                            zIndex: 5
                                         }}
-                                    >
-                                        {/* Map Pin */}
-                                        <Box
-                                            sx={{
-                                                width: 60,
-                                                height: 60,
-                                                bgcolor: '#EA4335',
-                                                borderRadius: '50%',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                boxShadow: '0 4px 20px rgba(234, 67, 53, 0.4)'
-                                            }}
-                                        >
-                                            <Typography sx={{ fontSize: '1.5rem' }}>📅</Typography>
-                                        </Box>
-                                    </Box>
-
-                                    {/* Info Card */}
-                                    <Box sx={{ bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 3, p: 2 }}>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <Box>
-                                                <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
-                                                    Light Church
-                                                </Typography>
-                                                <Typography sx={{ opacity: 0.5, fontSize: '0.75rem' }}>
-                                                    Éclairez le monde, partout.
-                                                </Typography>
-                                            </Box>
-                                            <Box
-                                                sx={{
-                                                    width: 32,
-                                                    height: 32,
-                                                    bgcolor: 'rgba(255,255,255,0.1)',
-                                                    borderRadius: '50%',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center'
-                                                }}
-                                            >
-                                                <Typography sx={{ fontSize: '0.9rem' }}>📍</Typography>
-                                            </Box>
-                                        </Box>
-                                    </Box>
+                                    />
                                 </Box>
                             </Box>
                         </Box>
@@ -706,7 +689,32 @@ const LandingPage: React.FC = () => {
             >
                 <Box sx={{ p: 3 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 6 }}>
-                        <img src={lightChurchLogo} alt="Light Church" style={{ height: 32 }} />
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography
+                                variant="h6"
+                                sx={{
+                                    fontWeight: 800,
+                                    letterSpacing: '-0.5px',
+                                    color: 'white'
+                                }}
+                            >
+                                Lightchurch
+                            </Typography>
+                            <Box
+                                sx={{
+                                    bgcolor: '#4285F4',
+                                    color: 'white',
+                                    px: 0.8,
+                                    py: 0.2,
+                                    borderRadius: 1,
+                                    fontSize: '0.65rem',
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase'
+                                }}
+                            >
+                                Pro
+                            </Box>
+                        </Box>
                         <IconButton onClick={() => setMobileMenuOpen(false)} sx={{ color: 'white' }}>
                             <CloseIcon />
                         </IconButton>
