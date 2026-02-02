@@ -202,38 +202,60 @@ const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(({
                 }}
             >
 
-                {/* Handle - zone de drag uniquement */}
+                {/* Handle - zone de drag élargie pour meilleure UX */}
                 <Box
                     onPointerDown={startDrag}
                     sx={{
-                        pt: 1.5,
-                        pb: 1,
+                        pt: 2,
+                        pb: 1.5,
+                        px: 2,
                         display: 'flex',
-                        justifyContent: 'center',
+                        flexDirection: 'column',
+                        alignItems: 'center',
                         cursor: 'grab',
                         flexShrink: 0,
                         bgcolor: '#FFFFFF',
                         borderTopLeftRadius: 16,
                         borderTopRightRadius: 16,
                         touchAction: 'none',
+                        // Zone de touch élargie
+                        minHeight: 44,
                         '&:active': {
                             cursor: 'grabbing',
-                        }
+                            bgcolor: '#F8F9FA',
+                        },
+                        '&:hover': {
+                            bgcolor: '#FAFAFA',
+                        },
+                        transition: 'background-color 0.15s ease',
                     }}
                 >
                     <Box
                         sx={{
-                            width: 36,
+                            width: 40,
                             height: 5,
                             bgcolor: '#DADCE0',
                             borderRadius: 2.5,
+                            mb: 0.5,
                         }}
                     />
+                    <Typography
+                        variant="caption"
+                        sx={{
+                            color: '#9AA0A6',
+                            fontSize: '0.65rem',
+                            userSelect: 'none',
+                            letterSpacing: '0.5px',
+                        }}
+                    >
+                        Glisser pour ajuster
+                    </Typography>
                 </Box>
 
-                {/* Header avec bouton retour en mode détails */}
+                {/* Header avec bouton retour en mode détails - aussi draggable */}
                 {showDetails && onBackToList && (
                     <Box
+                        onPointerDown={startDrag}
                         sx={{
                             display: 'flex',
                             alignItems: 'center',
@@ -241,10 +263,20 @@ const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(({
                             pb: 1,
                             borderBottom: '1px solid #E8EAED',
                             flexShrink: 0,
+                            cursor: 'grab',
+                            touchAction: 'none',
+                            '&:active': {
+                                cursor: 'grabbing',
+                                bgcolor: '#F8F9FA',
+                            },
                         }}
                     >
                         <IconButton
-                            onClick={onBackToList}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onBackToList();
+                            }}
+                            onPointerDown={(e) => e.stopPropagation()}
                             size="small"
                             sx={{ color: '#5F6368' }}
                         >
@@ -260,6 +292,7 @@ const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(({
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap',
+                                    flex: 1,
                                 }}
                             >
                                 {detailsTitle}

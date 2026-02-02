@@ -8,6 +8,7 @@ import {
     Home as HomeIcon
 } from '@mui/icons-material';
 import { useMap } from 'react-leaflet';
+import { motion } from 'framer-motion';
 
 interface MapControlsProps {
     onLocate: () => void;
@@ -181,23 +182,29 @@ const MapControls: React.FC<MapControlsProps> = ({
                     <Box sx={{ height: '1px', bgcolor: 'rgba(0,0,0,0.06)', mx: 1 }} />
 
                     <Tooltip title="Mes participations" placement="left">
-                        <Fab
-                            sx={{ 
-                                ...fabStyle, 
-                                boxShadow: 'none', 
-                                border: 'none', 
-                                bgcolor: 'transparent',
-                                backdropFilter: 'none',
-                                borderRadius: 0 
-                            }}
-                            onClick={onParticipationsClick}
-                            size="small"
-                            aria-label="my participations"
+                        <motion.div
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 17 }}
                         >
-                            <Badge badgeContent={participationsCount} color="error" max={99} sx={{ '& .MuiBadge-badge': { right: -2, top: -2, scale: '0.8' } }}>
-                                <EventIcon sx={{ color: participationsCount > 0 ? '#EA4335' : '#3C4043' }} />
-                            </Badge>
-                        </Fab>
+                            <Fab
+                                sx={{ 
+                                    ...fabStyle, 
+                                    boxShadow: 'none', 
+                                    border: 'none', 
+                                    bgcolor: 'transparent',
+                                    backdropFilter: 'none',
+                                    borderRadius: 0 
+                                }}
+                                onClick={onParticipationsClick}
+                                size="small"
+                                aria-label="my participations"
+                            >
+                                <Badge badgeContent={participationsCount} color="error" max={99} sx={{ '& .MuiBadge-badge': { right: -2, top: -2, scale: '0.8' } }}>
+                                    <EventIcon sx={{ color: participationsCount > 0 ? '#EA4335' : '#3C4043' }} />
+                                </Badge>
+                            </Fab>
+                        </motion.div>
                     </Tooltip>
 
                     <Box sx={{ height: '1px', bgcolor: 'rgba(0,0,0,0.06)', mx: 1 }} />

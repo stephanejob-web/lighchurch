@@ -279,7 +279,7 @@ EventCard.displayName = 'EventCard';
 /**
  * ResultsPanel avec pagination serveur
  */
-const SNAP_POINTS = [15, 50, 90]; // Pourcentages de la hauteur de l'écran
+const SNAP_POINTS = [15, 50, 75]; // Pourcentages de la hauteur de l'écran (75% max pour laisser la SearchPanel visible)
 
 const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
     onChurchClick,
