@@ -185,6 +185,7 @@ const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(({
                 height: windowHeight,
                 zIndex: 1300,
                 willChange: 'transform',
+                pointerEvents: 'none', // Laisser passer les clics à travers la zone invisible
             }}
         >
             <motion.div
@@ -197,6 +198,7 @@ const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(({
                     display: 'flex',
                     flexDirection: 'column',
                     overflow: 'hidden',
+                    pointerEvents: 'auto', // Réactiver les clics sur le contenu visible
                 }}
             >
 

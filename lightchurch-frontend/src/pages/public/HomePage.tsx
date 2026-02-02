@@ -1169,6 +1169,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                     data={selectedItem}
                                     type={selectedType}
                                     slideDirection={slideDirection}
+                                    hasHistory={drawerHistory.length > 0}
                                     onOrganizerClick={async (id) => {
                                         // Dive deeper -> Slide Right (Exit left, Enter right)
                                         setSlideDirection('right');
