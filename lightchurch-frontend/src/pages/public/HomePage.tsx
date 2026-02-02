@@ -1020,7 +1020,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                 <MyParticipationsSidebar onEventClick={(e) => handleMarkerClick(e, 'event')} />
                             </Box>
                         </Box>
-                    ) : !detailDrawerOpen && (
+                    ) : (
                         <ResultsPanel
                             onChurchClick={(c) => handleMarkerClick(c, 'church')}
                             onEventClick={(e) => handleMarkerClick(e, 'event')}
@@ -1028,49 +1028,52 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                             isMobileView
                             currentBounds={currentBounds}
                             userLocation={userLocation}
+                            // Props pour les détails intégrés dans le bottom sheet
+                            showDetails={detailDrawerOpen}
+                            onBackToList={handleCloseDrawer}
+                            detailsTitle={selectedType === 'event' ? (selectedItem as any)?.title : (selectedItem as any)?.church_name}
+                            detailsContent={
+                                <DetailDrawer
+                                    embedded
+                                    open={true}
+                                    onClose={handleCloseDrawer}
+                                    loading={!selectedItem}
+                                    data={selectedItem}
+                                    type={selectedType}
+                                    onOrganizerClick={async (id) => {
+                                        if (selectedItem && selectedType) {
+                                            setDrawerHistory(prev => [...prev, { item: selectedItem, type: selectedType }]);
+                                        }
+                                        const c = churches.find(c => String(c.id) === String(id));
+                                        if (c) {
+                                            setSelectedType('church');
+                                            setMapCenter([c.latitude, c.longitude]);
+                                            setMapZoom(16);
+                                            mapInstance?.flyTo([c.latitude, c.longitude], 16, { duration: 0.8 });
+                                            try {
+                                                const { fetchChurchDetails } = await import('../../services/publicMapService');
+                                                const details = await fetchChurchDetails(c.id);
+                                                setSelectedItem(details);
+                                            } catch (err) {
+                                                setSelectedItem(c);
+                                            }
+                                        } else {
+                                            try {
+                                                const church = await fetchChurchDetails(Number(id));
+                                                if (church && church.latitude && church.longitude) {
+                                                    mapInstance?.flyTo([church.latitude, church.longitude], 16, { duration: 0.8 });
+                                                    setSelectedItem(church);
+                                                    setSelectedType('church');
+                                                }
+                                            } catch (error) {
+                                                console.error('Error fetching organizer church:', error);
+                                            }
+                                        }
+                                    }}
+                                />
+                            }
                         />
                     )}
-
-                    <DetailDrawer open={detailDrawerOpen} onClose={handleCloseDrawer} loading={!selectedItem}
-                        data={selectedItem} type={selectedType}
-                        onOrganizerClick={async (id) => {
-                            // Save current event to history before switching
-                            if (selectedItem && selectedType) {
-                                setDrawerHistory(prev => [...prev, { item: selectedItem, type: selectedType }]);
-                            }
-
-                            // D'abord chercher dans les églises locales
-                            const c = churches.find(c => String(c.id) === String(id));
-                            if (c) {
-                                // Direct switch without clearing history (handleMarkerClick clears it, so we can't use it directly)
-                                // We need to duplicate the logic of handleMarkerClick BUT WITHOUT clearing history
-                                setSelectedType('church');
-                                // setDetailDrawerOpen(true); // Already open
-                                setMapCenter([c.latitude, c.longitude]);
-                                setMapZoom(16);
-                                mapInstance?.flyTo([c.latitude, c.longitude], 16, { duration: 0.8 });
-                                
-                                try {
-                                    const { fetchChurchDetails } = await import('../../services/publicMapService');
-                                    const details = await fetchChurchDetails(c.id);
-                                    setSelectedItem(details);
-                                } catch (err) {
-                                    setSelectedItem(c);
-                                }
-                            } else {
-                                // Si non trouvée, récupérer depuis l'API et centrer la carte
-                                try {
-                                    const church = await fetchChurchDetails(Number(id));
-                                    if (church && church.latitude && church.longitude) {
-                                        mapInstance?.flyTo([church.latitude, church.longitude], 16, { duration: 0.8 });
-                                        setSelectedItem(church);
-                                        setSelectedType('church');
-                                    }
-                                } catch (error) {
-                                    console.error('Error fetching organizer church:', error);
-                                }
-                            }
-                        }} />
                 </>
             ) : (
                 // DESKTOP LAYOUT (Floating Cards)

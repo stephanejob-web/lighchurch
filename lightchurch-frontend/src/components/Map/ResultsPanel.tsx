@@ -51,6 +51,11 @@ interface ResultsPanelProps {
     currentBounds?: MapBounds | null;
     userLocation?: UserLocation | null;
     embedded?: boolean;
+    // Props pour le mode détails dans le BottomSheet (mobile)
+    detailsContent?: React.ReactNode;
+    showDetails?: boolean;
+    onBackToList?: () => void;
+    detailsTitle?: string;
 }
 
 const PAGE_SIZE = 20;
@@ -282,7 +287,12 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
     onClose,
     currentBounds,
     userLocation,
-    embedded
+    embedded,
+    // Props pour le mode détails
+    detailsContent,
+    showDetails = false,
+    onBackToList,
+    detailsTitle
 }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -635,6 +645,10 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
             <BottomSheet
                 snapPoints={SNAP_POINTS}
                 initialSnapIndex={0}
+                detailsContent={detailsContent}
+                showDetails={showDetails}
+                onBackToList={onBackToList}
+                detailsTitle={detailsTitle}
             >
                 {content}
             </BottomSheet>
