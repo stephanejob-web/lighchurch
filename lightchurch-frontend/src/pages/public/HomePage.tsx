@@ -25,8 +25,8 @@ import { useSupercluster } from '../../hooks/useSupercluster';
 import SearchPanel from '../../components/ui/SearchPanel';
 import DetailDrawer from '../../components/ui/DetailDrawer';
 import ResultsPanel from '../../components/Map/ResultsPanel';
-// import Sidebar from '../../components/Map/Sidebar';
 import MyParticipationsSidebar from '../../components/Map/MyParticipationsSidebar';
+import { motion, AnimatePresence } from 'framer-motion';
 import MapControls from '../../components/Map/MapControls';
 
 // Fix Leaflet default icon
@@ -575,7 +575,6 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
     const [mapType, setMapType] = useState<'satellite' | 'standard'>('satellite');
     const [resultsPanelOpen, setResultsPanelOpen] = useState(true);
     const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
-    const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right');
 
     // ========== NAVIGATION HISTORY (Bouton Retour) ==========
     const [previousPosition, setPreviousPosition] = useState<{ center: [number, number]; zoom: number } | null>(null);
@@ -801,9 +800,6 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
         return merged;
     }, [currentZoom, clusters, dataState.serverClusters.churchClusters, dataState.serverClusters.eventClusters]);
 
-    // Final values for components (churches utilisé pour onOrganizerClick dans DetailDrawer)
-    const churches = dataState.churches;
-
     // ========== GET USER LOCATION ==========
     useEffect(() => {
         const fetchLocation = async () => {
@@ -835,6 +831,15 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
         window.addEventListener('storage', (e) => { if (e.key === 'light_church:interested_events') refresh(); });
         return () => window.removeEventListener('light_church:interests_updated', refresh);
     }, []);
+
+    // ========== SYNC DRAWER WITH MODE ==========
+    useEffect(() => {
+        if (viewMode === 'participations') {
+            setDetailDrawerOpen(false);
+            setSelectedItem(null);
+            setDrawerHistory([]);
+        }
+    }, [viewMode]);
 
     // ========== HANDLE URL PARAM church_id (Aperçu Public) ==========
     useEffect(() => {
@@ -910,25 +915,21 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
     const handleCloseDrawer = useCallback(() => {
         if (drawerHistory.length > 0) {
             // Go back in history
-            setSlideDirection('left');
             const newHistory = [...drawerHistory];
             const previous = newHistory.pop();
             setDrawerHistory(newHistory);
-            
+
             if (previous) {
                 setSelectedItem(previous.item);
                 setSelectedType(previous.type);
-                // Optionally re-center map if needed, but maybe better to leave user where they are
-                // or fly back to event location? Let's stay simple for now.
                 if (previous.item.latitude && previous.item.longitude) {
                      mapInstance?.flyTo([previous.item.latitude, previous.item.longitude], 16, { duration: 0.5 });
                 }
                 return;
             }
         }
-        
+
         // Normal close
-        setSlideDirection('right');
         setDetailDrawerOpen(false);
         setSelectedItem(null);
         setDrawerHistory([]);
@@ -996,80 +997,118 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
 
             {isMobile ? (
                 <>
-                    {/* Safe area padding for iOS notch */}
+                    {/* Safe area padding for iOS notch - Fixed position to stay above everything */}
                     <Box sx={{
                         pt: 'env(safe-area-inset-top, 8px)',
-                        bgcolor: 'rgba(255,255,255,0.95)',
-                        backdropFilter: 'blur(10px)',
-                        position: 'relative',
-                        zIndex: 1100
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        zIndex: 1400,
+                        pointerEvents: 'none'
                     }}>
-                        <SearchPanel
-                            onSearch={() => {}}
-                            onFilterChange={(f) => { setShowChurches(f.churches); setShowEvents(f.events); }}
-                            onToggleList={() => setResultsPanelOpen(!resultsPanelOpen)}
-                            onLocationSelect={handleLocationSelect}
-                        />
+                        <Box sx={{ pointerEvents: 'auto' }}>
+                            <SearchPanel
+                                embedded
+                                onSearch={() => {}}
+                                onFilterChange={(f) => { setShowChurches(f.churches); setShowEvents(f.events); }}
+                                onToggleList={() => setResultsPanelOpen(!resultsPanelOpen)}
+                                onLocationSelect={handleLocationSelect}
+                            />
+                        </Box>
                     </Box>
 
-                    {(resultsPanelOpen || viewMode === 'participations') && !detailDrawerOpen && (
-                        <Box sx={{ position: 'absolute', top: 120, left: 16, bottom: 24, width: 'calc(100% - 32px)', zIndex: 900, pointerEvents: 'none' }}>
-                            <Box sx={{ height: '100%', pointerEvents: 'auto', borderRadius: 2, overflow: 'hidden', boxShadow: 3 }}>
-                                {viewMode === 'participations' ? (
+                    {/* Backdrop flou quand on voit les participations */}
+                    <AnimatePresence>
+                        {viewMode === 'participations' && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                                    backdropFilter: 'blur(4px)',
+                                    zIndex: 850,
+                                    originY: 0
+                                }}
+                                onClick={() => navigate('/map')}
+                            />
+                        )}
+                    </AnimatePresence>
+
+                    {/* Bottom Sheet Google Maps style - toujours visible */}
+                    <AnimatePresence mode="wait">
+                        {viewMode === 'participations' ? (
+                            <motion.div
+                                key="participations"
+                                initial={{ x: '100%', opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                exit={{ x: '100%', opacity: 0 }}
+                                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                                style={{ position: 'absolute', top: 120, left: 16, bottom: 24, width: 'calc(100% - 32px)', zIndex: 900, pointerEvents: 'none' }}
+                            >
+                                <Box sx={{ height: '100%', pointerEvents: 'auto', borderRadius: 2, overflow: 'hidden', boxShadow: 3 }}>
                                     <MyParticipationsSidebar onEventClick={(e) => handleMarkerClick(e, 'event')} />
-                                ) : (
-                                    <ResultsPanel
-                                        onChurchClick={(c) => handleMarkerClick(c, 'church')}
-                                        onEventClick={(e) => handleMarkerClick(e, 'event')}
-                                        onClose={() => setResultsPanelOpen(false)} open={resultsPanelOpen}
-                                        isGeolocated={!!userLocation} isMobileView
-                                        currentBounds={currentBounds}
-                                        userLocation={userLocation} />
-                                )}
-                            </Box>
-                        </Box>
-                    )}
-
-                    <DetailDrawer open={detailDrawerOpen} onClose={handleCloseDrawer} loading={!selectedItem}
-                        data={selectedItem} type={selectedType}
-                        onOrganizerClick={async (id) => {
-                            // Save current event to history before switching
-                            if (selectedItem && selectedType) {
-                                setDrawerHistory(prev => [...prev, { item: selectedItem, type: selectedType }]);
-                            }
-
-                            // D'abord chercher dans les églises locales
-                            const c = churches.find(c => String(c.id) === String(id));
-                            if (c) {
-                                // Direct switch without clearing history (handleMarkerClick clears it, so we can't use it directly)
-                                // We need to duplicate the logic of handleMarkerClick BUT WITHOUT clearing history
-                                setSelectedType('church');
-                                // setDetailDrawerOpen(true); // Already open
-                                setMapCenter([c.latitude, c.longitude]);
-                                setMapZoom(16);
-                                mapInstance?.flyTo([c.latitude, c.longitude], 16, { duration: 0.8 });
-                                
-                                try {
-                                    const { fetchChurchDetails } = await import('../../services/publicMapService');
-                                    const details = await fetchChurchDetails(c.id);
-                                    setSelectedItem(details);
-                                } catch (err) {
-                                    setSelectedItem(c);
-                                }
-                            } else {
-                                // Si non trouvée, récupérer depuis l'API et centrer la carte
-                                try {
-                                    const church = await fetchChurchDetails(Number(id));
-                                    if (church && church.latitude && church.longitude) {
-                                        mapInstance?.flyTo([church.latitude, church.longitude], 16, { duration: 0.8 });
-                                        setSelectedItem(church);
-                                        setSelectedType('church');
+                                </Box>
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key="results"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <ResultsPanel
+                                    onChurchClick={(c) => handleMarkerClick(c, 'church')}
+                                    onEventClick={(e) => handleMarkerClick(e, 'event')}
+                                    isGeolocated={!!userLocation}
+                                    isMobileView
+                                    currentBounds={currentBounds}
+                                    userLocation={userLocation}
+                                    // Props pour les détails intégrés dans le bottom sheet
+                                    showDetails={detailDrawerOpen}
+                                    onBackToList={handleCloseDrawer}
+                                    detailsTitle={selectedType === 'event' ? (selectedItem as any)?.title : (selectedItem as any)?.church_name}
+                                    detailsContent={
+                                        <DetailDrawer
+                                            embedded
+                                            open={true}
+                                            onClose={handleCloseDrawer}
+                                            loading={!selectedItem}
+                                            data={selectedItem}
+                                            type={selectedType}
+                                            onOrganizerClick={async (id) => {
+                                                // Sauvegarder l'état actuel dans l'historique
+                                                if (selectedItem && selectedType) {
+                                                    setDrawerHistory(prev => [...prev, { item: selectedItem, type: selectedType }]);
+                                                }
+                                                // Toujours récupérer les détails complets de l'église
+                                                try {
+                                                    const church = await fetchChurchDetails(Number(id));
+                                                    if (church) {
+                                                        setSelectedType('church');
+                                                        setSelectedItem(church);
+                                                        if (church.latitude && church.longitude) {
+                                                            setMapCenter([church.latitude, church.longitude]);
+                                                            setMapZoom(16);
+                                                        }
+                                                    }
+                                                } catch (error) {
+                                                    console.error('Error fetching organizer church:', error);
+                                                }
+                                            }}
+                                        />
                                     }
-                                } catch (error) {
-                                    console.error('Error fetching organizer church:', error);
-                                }
-                            }
-                        }} />
+                                />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </>
             ) : (
                 // DESKTOP LAYOUT (Floating Cards)
@@ -1156,68 +1195,86 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                 border: 'none'
                             }}
                         >
-                            {detailDrawerOpen ? (
-                                <DetailDrawer
-                                    embedded
-                                    open
-                                    onClose={handleCloseDrawer}
-                                    loading={!selectedItem}
-                                    data={selectedItem}
-                                    type={selectedType}
-                                    slideDirection={slideDirection}
-                                    onOrganizerClick={async (id) => {
-                                        // Dive deeper -> Slide Right (Exit left, Enter right)
-                                        setSlideDirection('right');
-
-                                        // Save current event to history before switching
-                                        if (selectedItem && selectedType) {
-                                            setDrawerHistory(prev => [...prev, { item: selectedItem, type: selectedType }]);
-                                        }
-
-                                        // D'abord chercher dans les églises locales
-                                        const c = churches.find(c => String(c.id) === String(id));
-                                        if (c) {
-                                            // Direct switch logic (without clearing history)
-                                            setSelectedType('church');
-                                            setMapCenter([c.latitude, c.longitude]);
-                                            setMapZoom(16);
-                                            mapInstance?.flyTo([c.latitude, c.longitude], 16, { duration: 0.8 });
-
-                                            try {
-                                                const { fetchChurchDetails } = await import('../../services/publicMapService');
-                                                const details = await fetchChurchDetails(c.id);
-                                                setSelectedItem(details);
-                                            } catch (err) {
-                                                setSelectedItem(c);
-                                            }
-                                        } else {
-                                            // Si non trouvée, récupérer depuis l'API et centrer la carte
-                                            try {
-                                                const church = await fetchChurchDetails(Number(id));
-                                                if (church && church.latitude && church.longitude) {
-                                                    mapInstance?.flyTo([church.latitude, church.longitude], 16, { duration: 0.8 });
-                                                    setSelectedItem(church);
-                                                    setSelectedType('church');
+                            <AnimatePresence mode="wait">
+                                {detailDrawerOpen ? (
+                                    <motion.div
+                                        key="details"
+                                        initial={{ x: '20%', opacity: 0 }}
+                                        animate={{ x: 0, opacity: 1 }}
+                                        exit={{ x: '20%', opacity: 0 }}
+                                        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                                        style={{
+                                            flex: 1,
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            minHeight: 0,
+                                            overflow: 'hidden'
+                                        }}
+                                    >
+                                        <DetailDrawer
+                                            embedded
+                                            open={true}
+                                            hasHistory={drawerHistory.length > 0}
+                                            onClose={handleCloseDrawer}
+                                            loading={!selectedItem}
+                                            data={selectedItem}
+                                            type={selectedType}
+                                            onOrganizerClick={async (id) => {
+                                                // Sauvegarder l'état actuel dans l'historique
+                                                if (selectedItem && selectedType) {
+                                                    setDrawerHistory(prev => [...prev, { item: selectedItem, type: selectedType }]);
                                                 }
-                                            } catch (error) {
-                                                console.error('Error fetching organizer church:', error);
-                                            }
-                                        }
-                                    }}
-                                />
-                            ) : viewMode === 'participations' ? (
-                                <MyParticipationsSidebar onEventClick={(e) => handleMarkerClick(e, 'event')} />
-                            ) : (
-                                <ResultsPanel
-                                    embedded
-                                    onChurchClick={(c) => handleMarkerClick(c, 'church')}
-                                    onEventClick={(e) => handleMarkerClick(e, 'event')}
-                                    isGeolocated={!!userLocation}
-                                    isMobileView={false}
-                                    currentBounds={currentBounds}
-                                    userLocation={userLocation}
-                                />
-                            )}
+                                                // Toujours récupérer les détails complets de l'église
+                                                try {
+                                                    const church = await fetchChurchDetails(Number(id));
+                                                    if (church) {
+                                                        setSelectedType('church');
+                                                        setSelectedItem(church);
+                                                    }
+                                                } catch (error) {
+                                                    console.error('Error fetching organizer church:', error);
+                                                }
+                                            }}
+                                        />
+                                    </motion.div>
+                                ) : viewMode === 'participations' ? (
+                                    <motion.div
+                                        key="participations"
+                                        initial={{ x: -20, opacity: 0 }}
+                                        animate={{ x: 0, opacity: 1 }}
+                                        exit={{ x: -20, opacity: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                        style={{ flex: 1, minHeight: 0 }}
+                                    >
+                                        <MyParticipationsSidebar onEventClick={(e) => handleMarkerClick(e, 'event')} />
+                                    </motion.div>
+                                ) : (
+                                    <motion.div
+                                        key="results"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                        style={{
+                                            flex: 1,
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            minHeight: 0,
+                                            overflow: 'hidden'
+                                        }}
+                                    >
+                                        <ResultsPanel
+                                            embedded
+                                            onChurchClick={(c) => handleMarkerClick(c, 'church')}
+                                            onEventClick={(e) => handleMarkerClick(e, 'event')}
+                                            isGeolocated={!!userLocation}
+                                            isMobileView={false}
+                                            currentBounds={currentBounds}
+                                            userLocation={userLocation}
+                                        />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </Paper>
                     </Box>
                 </Box>

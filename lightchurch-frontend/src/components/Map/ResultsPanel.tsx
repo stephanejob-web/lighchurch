@@ -14,7 +14,7 @@ import {
     InputBase,
     CircularProgress
 } from '@mui/material';
-import { Drawer as VaulDrawer } from 'vaul';
+import BottomSheet from '../ui/BottomSheet';
 import {
     Close as CloseIcon,
     AccountBalance as AccountBalanceIcon,
@@ -46,12 +46,16 @@ interface ResultsPanelProps {
     onChurchClick: (church: Church) => void;
     onEventClick: (event: Event) => void;
     onClose?: () => void;
-    open?: boolean;
     isGeolocated?: boolean;
     isMobileView?: boolean;
     currentBounds?: MapBounds | null;
     userLocation?: UserLocation | null;
     embedded?: boolean;
+    // Props pour le mode détails dans le BottomSheet (mobile)
+    detailsContent?: React.ReactNode;
+    showDetails?: boolean;
+    onBackToList?: () => void;
+    detailsTitle?: string;
 }
 
 const PAGE_SIZE = 20;
@@ -275,14 +279,20 @@ EventCard.displayName = 'EventCard';
 /**
  * ResultsPanel avec pagination serveur
  */
+const SNAP_POINTS = [15, 50, 75]; // Pourcentages de la hauteur de l'écran (75% max pour laisser la SearchPanel visible)
+
 const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
     onChurchClick,
     onEventClick,
     onClose,
-    open = true,
     currentBounds,
     userLocation,
-    embedded
+    embedded,
+    // Props pour le mode détails
+    detailsContent,
+    showDetails = false,
+    onBackToList,
+    detailsTitle
 }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -502,7 +512,7 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
     const showSearchBar = totalBeforeFilter > 15 || searchQuery.length > 0;
 
     const content = (
-        <Box sx={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', backgroundColor: '#FFFFFF' }}>
+        <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', backgroundColor: '#FFFFFF' }}>
             {/* En-tête */}
             <Box sx={{ p: 2, borderBottom: '1px solid #E8EAED' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -632,56 +642,16 @@ const ResultsPanel: React.FC<ResultsPanelProps> = React.memo(({
 
     if (isMobile) {
         return (
-            <VaulDrawer.Root open={open} onOpenChange={(isOpen) => !isOpen && onClose?.()}>
-                <VaulDrawer.Portal>
-                    <VaulDrawer.Overlay
-                        style={{
-                            position: 'fixed',
-                            inset: 0,
-                            backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                            zIndex: 1200,
-                        }}
-                    />
-                    <VaulDrawer.Content
-                        style={{
-                            position: 'fixed',
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            height: '90vh',
-                            backgroundColor: '#FFFFFF',
-                            borderTopLeftRadius: 16,
-                            borderTopRightRadius: 16,
-                            zIndex: 1201,
-                            display: 'flex',
-                            flexDirection: 'column',
-                        }}
-                        aria-describedby={undefined}
-                    >
-                        {/* Accessibility: Hidden title for screen readers */}
-                        <VaulDrawer.Title style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}>
-                            Résultats de recherche
-                        </VaulDrawer.Title>
-                        {/* Handle pour le swipe */}
-                        <Box
-                            sx={{
-                                pt: 'max(12px, env(safe-area-inset-top, 12px))',
-                                pb: 1,
-                                display: 'flex',
-                                justifyContent: 'center',
-                                cursor: 'grab',
-                                flexShrink: 0,
-                                bgcolor: '#FFFFFF',
-                            }}
-                        >
-                            <Box sx={{ width: 40, height: 5, bgcolor: '#DADCE0', borderRadius: 2.5 }} />
-                        </Box>
-                        <Box sx={{ overflowY: 'auto', flex: 1, pb: 'env(safe-area-inset-bottom, 0px)' }}>
-                            {content}
-                        </Box>
-                    </VaulDrawer.Content>
-                </VaulDrawer.Portal>
-            </VaulDrawer.Root>
+            <BottomSheet
+                snapPoints={SNAP_POINTS}
+                initialSnapIndex={0}
+                detailsContent={detailsContent}
+                showDetails={showDetails}
+                onBackToList={onBackToList}
+                detailsTitle={detailsTitle}
+            >
+                {content}
+            </BottomSheet>
         );
     }
 

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Drawer, Box, Typography, Button, IconButton, Skeleton, Divider, Chip, Link, Stack, Alert, useTheme, useMediaQuery } from '@mui/material';
-import { Close, Directions, PunchClock, Call, Language, LocationOn, LocalParking, Accessible, Mic, Person, People, Euro, YouTube, InsertLink, CancelOutlined, Info, Email, Translate, Facebook, Instagram, Twitter, LinkedIn, WhatsApp, EventBusy } from '@mui/icons-material';
+import { Close, Directions, PunchClock, Call, Language, LocationOn, LocalParking, Accessible, Mic, Person, People, Euro, YouTube, InsertLink, CancelOutlined, Info, Email, Translate, Facebook, Instagram, Twitter, LinkedIn, WhatsApp, EventBusy, ArrowBack } from '@mui/icons-material';
 import type { ChurchDetails, EventDetails } from '../../types/publicMap';
 import useEventInterestWeb from '../../hooks/useEventInterestWeb';
 import TikTokIcon from '../icons/TikTokIcon';
@@ -15,7 +15,8 @@ interface DetailDrawerProps {
     type: 'church' | 'event' | null;
     embedded?: boolean;
     onOrganizerClick?: (churchId: string) => void;
-    slideDirection?: 'left' | 'right'; // New prop
+    slideDirection?: 'left' | 'right';
+    hasHistory?: boolean; // New prop
 }
 
 const variants = {
@@ -33,7 +34,7 @@ const variants = {
     })
 };
 
-const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, data, type, embedded = false, onOrganizerClick, slideDirection = 'right' }) => {
+const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, data, type, embedded = false, onOrganizerClick, slideDirection = 'right', hasHistory = false }) => {
     // Theme logic: Church = Blue (#1A73E8), Event = Red (#EA4335)
     // We use a slightly darker shade for hover states
     const themeColor = type === 'event' ? '#EA4335' : '#1A73E8';
@@ -52,6 +53,14 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
     const [overrideData, setOverrideData] = useState<ChurchDetails | null>(null);
     const [overrideType, setOverrideType] = useState<'church' | 'event' | null>(null);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    // Reset scroll when data changes
+    useEffect(() => {
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTo(0, 0);
+        }
+    }, [data?.id, type, overrideData?.id, overrideType]);
 
     const handleClose = () => {
         setOverrideData(null);
@@ -605,39 +614,46 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
                                 position: 'relative'
                             }}
                         >
-                            <IconButton
-                                onClick={handleClose}
-                                aria-label="Fermer"
-                                sx={{
-                                    position: 'absolute',
-                                    top: 8,
-                                    right: 8,
-                                    backgroundColor: '#FFFFFF',
-                                    color: '#5F6368',
-                                    boxShadow: '0 1px 2px 0 rgba(60,64,67,0.3)',
-                                    '&:hover': { backgroundColor: '#F8F9FA' }
-                                }}
-                            >
-                                <Close />
-                            </IconButton>
+                            {/* Croix/Retour sur desktop, ou si pas embedded sur mobile */}
+                            {(!embedded || !isMobile) && (
+                                <IconButton
+                                    onClick={handleClose}
+                                    aria-label={hasHistory ? "Retour" : "Fermer"}
+                                    sx={{
+                                        position: 'absolute',
+                                        top: 8,
+                                        right: 8,
+                                        backgroundColor: '#FFFFFF',
+                                        color: '#5F6368',
+                                        boxShadow: '0 1px 2px 0 rgba(60,64,67,0.3)',
+                                        '&:hover': { backgroundColor: '#F8F9FA' }
+                                    }}
+                                >
+                                    {hasHistory ? <ArrowBack /> : <Close />}
+                                </IconButton>
+                            )}
                         </Box>
                     );
                 }
 
-                // Render just Close button if no image
-                // On Mobile Bottom Sheet, a close button might be redundant if we have a handle, 
-                // but let's keep it for accessibility and explicit action.
+                // En mode embedded sur mobile, pas besoin de bouton close (on a le bouton retour du BottomSheet)
+                // Mais sur desktop, on en a besoin même en mode embedded
+                if (embedded && isMobile) {
+                    return null;
+                }
+
+                // Render just Close/Back button if no image
                 return (
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
                         <IconButton
                             onClick={handleClose}
-                            aria-label="Fermer"
+                            aria-label={hasHistory ? "Retour" : "Fermer"}
                             sx={{
                                 color: '#5F6368',
                                 '&:hover': { backgroundColor: '#F8F9FA' }
                             }}
                         >
-                            <Close />
+                            {hasHistory ? <ArrowBack /> : <Close />}
                         </IconButton>
                     </Box>
                 );
@@ -654,8 +670,18 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
     ) : null;
 
     if (embedded) {
+        // En mode embedded (dans le BottomSheet), pas de scroll ici sur mobile - le BottomSheet gère le scroll
+        // Mais sur desktop, le DetailDrawer doit être scrollable lui-même
         return (
-            <Box sx={{ height: '100%', overflowY: 'auto', bgcolor: '#fff' }}>
+            <Box 
+                ref={scrollContainerRef}
+                sx={{ 
+                    bgcolor: '#fff', 
+                    height: '100%', 
+                    overflowY: isMobile ? 'visible' : 'auto',
+                    position: 'relative'
+                }}
+            >
                 {innerContent}
             </Box>
         );
@@ -712,7 +738,10 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, loading, dat
                                 borderRadius: 2.5
                             }} />
                         </Box>
-                        <Box sx={{ overflowY: 'auto', flex: 1, pb: 'max(24px, env(safe-area-inset-bottom, 24px))' }}>
+                        <Box 
+                            ref={scrollContainerRef}
+                            sx={{ overflowY: 'auto', flex: 1, pb: 'max(24px, env(safe-area-inset-bottom, 24px))' }}
+                        >
                             {innerContent}
                         </Box>
                     </VaulDrawer.Content>

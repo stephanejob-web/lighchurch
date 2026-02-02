@@ -1,12 +1,36 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Box, Typography, List, ListItem, ListItemButton, Paper, Button, Divider, CircularProgress, Chip } from '@mui/material';
 import { ArrowBack as ArrowBackIcon, Event as EventIcon } from '@mui/icons-material';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import type { EventDetails } from '../../types/publicMap';
 import { fetchEventDetails } from '../../services/publicMapService';
 import useEventInterestWeb from '../../hooks/useEventInterestWeb';
 
 const STORAGE_KEY = 'light_church:interested_events';
+
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1
+        }
+    }
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, x: 20 },
+    visible: { 
+        opacity: 1, 
+        x: 0,
+        transition: {
+            type: "spring" as const,
+            stiffness: 300,
+            damping: 24
+        }
+    }
+};
 
 interface MyParticipationsSidebarProps {
     onEventClick: (event: EventDetails) => void;
@@ -97,155 +121,163 @@ const MyParticipationsSidebar: React.FC<MyParticipationsSidebarProps> = ({ onEve
 
             {/* Content */}
             <Box sx={{ flex: 1, overflowY: 'auto' }}>
-                <List>
-                    {events.map(ev => {
-                        const startDate = new Date(ev.start_datetime);
-                        const isCancelled = !!ev.cancelled_at;
-                        return (
-                            <React.Fragment key={ev.id}>
-                                <ListItem disablePadding>
-                                    <ListItemButton
-                                        onClick={() => onEventClick(ev)}
-                                        alignItems="flex-start"
-                                        sx={{
-                                            py: 1.5,
-                                            px: 2,
-                                            display: 'flex',
-                                            gap: 2,
-                                            borderLeft: isCancelled ? '4px solid #EA4335' : 'none',
-                                            pl: isCancelled ? 1.5 : 2,
-                                            opacity: isCancelled ? 0.8 : 1,
-                                            bgcolor: isCancelled ? '#F1F3F4' : 'transparent',
-                                            '&:hover': { bgcolor: isCancelled ? '#E8EAED' : '#F8F9FA' }
-                                        }}
-                                    >
-                                        {/* Left Content */}
-                                        <Box sx={{ flex: 1, minWidth: 0 }}>
-                                            {/* Badge ANNULÉ */}
-                                            {isCancelled && (
-                                                <Box sx={{ mb: 0.5 }}>
-                                                    <Chip
-                                                        label="ANNULÉ"
-                                                        size="small"
-                                                        sx={{
-                                                            height: 20,
-                                                            fontSize: '0.65rem',
-                                                            fontWeight: 700,
-                                                            bgcolor: '#EA4335',
-                                                            color: '#FFFFFF',
-                                                            letterSpacing: '0.5px'
-                                                        }}
-                                                    />
-                                                    {ev.cancellation_reason && (
-                                                        <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: '#EA4335', fontStyle: 'italic' }}>
-                                                            "{ev.cancellation_reason}"
-                                                        </Typography>
+                <motion.div
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="visible"
+                >
+                    <List>
+                        <AnimatePresence>
+                            {events.map(ev => {
+                                const startDate = new Date(ev.start_datetime);
+                                const isCancelled = !!ev.cancelled_at;
+                                return (
+                                    <motion.div key={ev.id} variants={itemVariants} layout>
+                                        <ListItem disablePadding>
+                                            <ListItemButton
+                                                onClick={() => onEventClick(ev)}
+                                                alignItems="flex-start"
+                                                sx={{
+                                                    py: 1.5,
+                                                    px: 2,
+                                                    display: 'flex',
+                                                    gap: 2,
+                                                    borderLeft: isCancelled ? '4px solid #EA4335' : 'none',
+                                                    pl: isCancelled ? 1.5 : 2,
+                                                    opacity: isCancelled ? 0.8 : 1,
+                                                    bgcolor: isCancelled ? '#F1F3F4' : 'transparent',
+                                                    '&:hover': { bgcolor: isCancelled ? '#E8EAED' : '#F8F9FA' }
+                                                }}
+                                            >
+                                                {/* Left Content */}
+                                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                                    {/* Badge ANNULÉ */}
+                                                    {isCancelled && (
+                                                        <Box sx={{ mb: 0.5 }}>
+                                                            <Chip
+                                                                label="ANNULÉ"
+                                                                size="small"
+                                                                sx={{
+                                                                    height: 20,
+                                                                    fontSize: '0.65rem',
+                                                                    fontWeight: 700,
+                                                                    bgcolor: '#EA4335',
+                                                                    color: '#FFFFFF',
+                                                                    letterSpacing: '0.5px'
+                                                                }}
+                                                            />
+                                                            {ev.cancellation_reason && (
+                                                                <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: '#EA4335', fontStyle: 'italic' }}>
+                                                                    "{ev.cancellation_reason}"
+                                                                </Typography>
+                                                            )}
+                                                        </Box>
                                                     )}
+                                                    <Typography variant="subtitle1" sx={{ fontWeight: 500, color: isCancelled ? '#5F6368' : '#202124', lineHeight: 1.2, mb: 0.5, textDecoration: isCancelled ? 'line-through' : 'none' }}>
+                                                        {ev.title}
+                                                    </Typography>
+                                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                                        <Typography component="span" variant="body2" color="#5F6368">
+                                                            {startDate.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'long' })} • {startDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                                        </Typography>
+                                                        <Typography component="span" variant="body2" color="#5F6368">
+                                                            {ev.details?.city || ev.church?.church_name}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Box sx={{ mt: 1.5 }} onClick={(e) => e.stopPropagation()}>
+                                                        <ParticipationButton eventId={ev.id} />
+                                                    </Box>
                                                 </Box>
-                                            )}
-                                            <Typography variant="subtitle1" sx={{ fontWeight: 500, color: isCancelled ? '#5F6368' : '#202124', lineHeight: 1.2, mb: 0.5, textDecoration: isCancelled ? 'line-through' : 'none' }}>
-                                                {ev.title}
-                                            </Typography>
-                                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                                                <Typography component="span" variant="body2" color="#5F6368">
-                                                    {startDate.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'long' })} • {startDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                                                </Typography>
-                                                <Typography component="span" variant="body2" color="#5F6368">
-                                                    {ev.details?.city || ev.church?.church_name}
-                                                </Typography>
-                                            </Box>
-                                            <Box sx={{ mt: 1.5 }} onClick={(e) => e.stopPropagation()}>
-                                                <ParticipationButton eventId={ev.id} />
-                                            </Box>
-                                        </Box>
 
-                                        {/* Right Icon (Event Date Badge) */}
-                                        <Paper
-                                            elevation={0}
-                                            sx={{
-                                                width: 72,
-                                                height: 72,
-                                                borderRadius: 2,
-                                                border: '1px solid #DADCE0',
-                                                bgcolor: '#FFFFFF',
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                alignItems: 'center',
-                                                justifyContent: 'flex-start',
-                                                overflow: 'hidden',
-                                                flexShrink: 0
-                                            }}
-                                        >
-                                            {/* Header (Mois) */}
-                                            <Box
-                                                sx={{
-                                                    width: '100%',
-                                                    height: 22,
-                                                    bgcolor: '#EA4335',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center'
-                                                }}
-                                            >
-                                                <Typography
-                                                    variant="caption"
+                                                {/* Right Icon (Event Date Badge) */}
+                                                <Paper
+                                                    elevation={0}
                                                     sx={{
-                                                        color: '#FFFFFF',
-                                                        fontWeight: 700,
-                                                        textTransform: 'uppercase',
-                                                        fontSize: '0.65rem',
-                                                        letterSpacing: '0.5px',
-                                                        lineHeight: 1
+                                                        width: 72,
+                                                        height: 72,
+                                                        borderRadius: 2,
+                                                        border: '1px solid #DADCE0',
+                                                        bgcolor: '#FFFFFF',
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'flex-start',
+                                                        overflow: 'hidden',
+                                                        flexShrink: 0
                                                     }}
                                                 >
-                                                    {startDate.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '')}
-                                                </Typography>
-                                            </Box>
+                                                    {/* Header (Mois) */}
+                                                    <Box
+                                                        sx={{
+                                                            width: '100%',
+                                                            height: 22,
+                                                            bgcolor: '#EA4335',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center'
+                                                        }}
+                                                    >
+                                                        <Typography
+                                                            variant="caption"
+                                                            sx={{
+                                                                color: '#FFFFFF',
+                                                                fontWeight: 700,
+                                                                textTransform: 'uppercase',
+                                                                fontSize: '0.65rem',
+                                                                letterSpacing: '0.5px',
+                                                                lineHeight: 1
+                                                            }}
+                                                        >
+                                                            {startDate.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '')}
+                                                        </Typography>
+                                                    </Box>
 
-                                            {/* Body (Jour + Heure) */}
-                                            <Box
-                                                sx={{
-                                                    flex: 1,
-                                                    width: '100%',
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    pb: 0.5
-                                                }}
-                                            >
-                                                <Typography
-                                                    variant="h5"
-                                                    sx={{
-                                                        color: '#202124',
-                                                        fontWeight: 400,
-                                                        fontSize: '1.5rem',
-                                                        lineHeight: 1,
-                                                        mt: 0.5
-                                                    }}
-                                                >
-                                                    {startDate.getDate()}
-                                                </Typography>
-                                                <Typography
-                                                    variant="caption"
-                                                    sx={{
-                                                        color: '#EA4335',
-                                                        fontSize: '0.65rem',
-                                                        fontWeight: 500,
-                                                        mt: 0.25
-                                                    }}
-                                                >
-                                                    {startDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                                                </Typography>
-                                            </Box>
-                                        </Paper>
-                                    </ListItemButton>
-                                </ListItem>
-                                <Divider component="li" />
-                            </React.Fragment>
-                        );
-                    })}
-                </List>
+                                                    {/* Body (Jour + Heure) */}
+                                                    <Box
+                                                        sx={{
+                                                            flex: 1,
+                                                            width: '100%',
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            pb: 0.5
+                                                        }}
+                                                    >
+                                                        <Typography
+                                                            variant="h5"
+                                                            sx={{
+                                                                color: '#202124',
+                                                                fontWeight: 400,
+                                                                fontSize: '1.5rem',
+                                                                lineHeight: 1,
+                                                                mt: 0.5
+                                                            }}
+                                                        >
+                                                            {startDate.getDate()}
+                                                        </Typography>
+                                                        <Typography
+                                                            variant="caption"
+                                                            sx={{
+                                                                color: '#EA4335',
+                                                                fontSize: '0.65rem',
+                                                                fontWeight: 500,
+                                                                mt: 0.25
+                                                            }}
+                                                        >
+                                                            {startDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                                        </Typography>
+                                                    </Box>
+                                                </Paper>
+                                            </ListItemButton>
+                                        </ListItem>
+                                        <Divider component="li" />
+                                    </motion.div>
+                                );
+                            })}
+                        </AnimatePresence>
+                    </List>
+                </motion.div>
             </Box>
         </Box>
     );
