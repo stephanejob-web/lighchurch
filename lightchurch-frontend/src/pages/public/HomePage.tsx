@@ -1005,6 +1005,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                         zIndex: 1100
                     }}>
                         <SearchPanel
+                            embedded
                             onSearch={() => {}}
                             onFilterChange={(f) => { setShowChurches(f.churches); setShowEvents(f.events); }}
                             onToggleList={() => setResultsPanelOpen(!resultsPanelOpen)}
@@ -1012,22 +1013,22 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                         />
                     </Box>
 
-                    {(resultsPanelOpen || viewMode === 'participations') && !detailDrawerOpen && (
+                    {/* Bottom Sheet Google Maps style - toujours visible */}
+                    {viewMode === 'participations' ? (
                         <Box sx={{ position: 'absolute', top: 120, left: 16, bottom: 24, width: 'calc(100% - 32px)', zIndex: 900, pointerEvents: 'none' }}>
                             <Box sx={{ height: '100%', pointerEvents: 'auto', borderRadius: 2, overflow: 'hidden', boxShadow: 3 }}>
-                                {viewMode === 'participations' ? (
-                                    <MyParticipationsSidebar onEventClick={(e) => handleMarkerClick(e, 'event')} />
-                                ) : (
-                                    <ResultsPanel
-                                        onChurchClick={(c) => handleMarkerClick(c, 'church')}
-                                        onEventClick={(e) => handleMarkerClick(e, 'event')}
-                                        onClose={() => setResultsPanelOpen(false)} open={resultsPanelOpen}
-                                        isGeolocated={!!userLocation} isMobileView
-                                        currentBounds={currentBounds}
-                                        userLocation={userLocation} />
-                                )}
+                                <MyParticipationsSidebar onEventClick={(e) => handleMarkerClick(e, 'event')} />
                             </Box>
                         </Box>
+                    ) : !detailDrawerOpen && (
+                        <ResultsPanel
+                            onChurchClick={(c) => handleMarkerClick(c, 'church')}
+                            onEventClick={(e) => handleMarkerClick(e, 'event')}
+                            isGeolocated={!!userLocation}
+                            isMobileView
+                            currentBounds={currentBounds}
+                            userLocation={userLocation}
+                        />
                     )}
 
                     <DetailDrawer open={detailDrawerOpen} onClose={handleCloseDrawer} loading={!selectedItem}
