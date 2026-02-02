@@ -91,7 +91,7 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
 
             ctx.beginPath();
             ctx.arc(center, center, r, 0, 6.283);
-            ctx.fillStyle = color; // Garder la couleur d'origine pour le marqueur
+            ctx.fillStyle = color; 
             ctx.fill();
 
             // Bordure plus épaisse et contrastée pour le sélectionné
@@ -165,7 +165,6 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
         const sprites = spritesRef.current;
         const PI2 = Math.PI * 2;
 
-        // Stocker le marqueur sélectionné pour le dessiner en dernier
         let selectedMarkerData: { x: number; y: number; sprite: HTMLCanvasElement; itemType: 'church' | 'event'; innerItem: any } | null = null;
 
         for (let i = 0; i < clusters.length; i++) {
@@ -186,19 +185,15 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
                 const eventCount = item.properties.eventCount || 0;
                 const total = churchCount + eventCount;
 
-                // Filtrage selon les options d'affichage
                 const visibleCount = (showChurches ? churchCount : 0) + (showEvents ? eventCount : 0);
                 if (visibleCount === 0) continue;
 
                 const r = Math.min(28, 14 + Math.log10(total) * 8);
 
-                // Dessiner le cluster bi-colore (camembert)
                 if (churchCount > 0 && eventCount > 0 && showChurches && showEvents) {
-                    // Cluster mixte : dessiner deux arcs proportionnels
                     const churchRatio = churchCount / total;
                     const churchAngle = churchRatio * PI2;
 
-                    // Arc bleu (églises) - commence en haut (-PI/2)
                     ctx.beginPath();
                     ctx.moveTo(x, y);
                     ctx.arc(x, y, r, -Math.PI / 2, -Math.PI / 2 + churchAngle);
@@ -206,7 +201,6 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
                     ctx.fillStyle = '#4285F4';
                     ctx.fill();
 
-                    // Arc rouge (événements)
                     ctx.beginPath();
                     ctx.moveTo(x, y);
                     ctx.arc(x, y, r, -Math.PI / 2 + churchAngle, -Math.PI / 2 + PI2);
@@ -214,7 +208,6 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
                     ctx.fillStyle = '#EA4335';
                     ctx.fill();
                 } else {
-                    // Cluster mono-couleur
                     ctx.beginPath();
                     ctx.arc(x, y, r, 0, PI2);
                     if (showChurches && churchCount > 0) {
@@ -225,14 +218,12 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
                     ctx.fill();
                 }
 
-                // Bordure blanche
                 ctx.beginPath();
                 ctx.arc(x, y, r, 0, PI2);
                 ctx.strokeStyle = '#fff';
                 ctx.lineWidth = 2;
                 ctx.stroke();
 
-                // Texte du compteur
                 ctx.fillStyle = '#fff';
                 ctx.font = 'bold 11px Arial';
                 ctx.textAlign = 'center';
@@ -241,25 +232,22 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
 
                 hitAreasRef.current.push({ x, y, r, type: 'mixed', isCluster: true, data: item });
             } else {
-                // Marqueur individuel
                 const itemType = item.properties.itemType as 'church' | 'event';
                 const innerItem = item.properties.item;
 
-                // Filtrage selon les options d'affichage
                 if (itemType === 'church' && !showChurches) continue;
                 if (itemType === 'event' && !showEvents) continue;
 
                 const isSelected = selectedType === itemType && selectedId === innerItem?.id;
                 const isParticipating = itemType === 'event' && innerItem && participations.has(innerItem.id);
 
-                // Si sélectionné, sauvegarder pour dessiner en dernier
                 if (isSelected) {
                     const sprite = itemType === 'church' ? sprites.churchSelected : sprites.eventSelected;
                     if (sprite) {
                         selectedMarkerData = { x, y, sprite, itemType, innerItem };
                     }
                     hitAreasRef.current.push({ x, y, r: 18, type: itemType, isCluster: false, data: innerItem });
-                    continue; // Ne pas dessiner maintenant
+                    continue; 
                 }
 
                 const sprite = isParticipating
@@ -275,7 +263,6 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
             }
         }
 
-        // Fallback: Si le marqueur sélectionné n'a pas été trouvé dans les clusters (e.g. chargement unique via ID ou hors vue initiale)
         if (!selectedMarkerData && selectedItemData && selectedType && selectedItemData.latitude && selectedItemData.longitude) {
             const lat = selectedItemData.latitude;
             const lng = selectedItemData.longitude;
@@ -283,46 +270,32 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
             const x = Math.round(point.x - offset.x);
             const y = Math.round(point.y - offset.y);
 
-            // Vérifier si c'est dans le canvas (pour éviter de dessiner hors écran si loin)
              if (x >= -50 && x <= width + 50 && y >= -50 && y <= height + 50) {
                 const sprite = selectedType === 'church' ? sprites.churchSelected : sprites.eventSelected;
                 if (sprite) {
                      selectedMarkerData = { x, y, sprite, itemType: selectedType, innerItem: selectedItemData };
-                     // Ajouter hitArea pour qu'on puisse cliquer dessus même si "artificiel"
                       hitAreasRef.current.push({ x, y, r: 18, type: selectedType, isCluster: false, data: selectedItemData });
                 }
              }
         }
 
-        // Dessiner le marqueur sélectionné en dernier (au-dessus de tout)
         if (selectedMarkerData) {
             const { x, y, sprite, itemType } = selectedMarkerData;
             
-            // --- EFFET BOUNCE (Rebond) ---
-            // Oscillation rapide pour le saut (Y seulement)
-            // Utilise la valeur absolue de sin pour faire des bonds, pas des vagues
             const bounceHeight = 15;
             const bounceSpeed = 0.08;
             const bounceY = -Math.abs(Math.sin(pulse * bounceSpeed)) * bounceHeight;
 
-            // --- EFFET RADAR (Ondes multiples) ---
-            // Couleur du halo selon le type
-            const ringColor = itemType === 'church' ? '66, 133, 244' : '234, 67, 53'; // RGB
+            const ringColor = itemType === 'church' ? '66, 133, 244' : '234, 67, 53'; 
             
-            // Dessiner 3 ondes concentriques
             const numRings = 3;
             const maxRadius = 50;
-            const duration = 100; // Durée d'un cycle en frames
+            const duration = 100; 
             
             for (let i = 0; i < numRings; i++) {
-                // Décalage pour chaque onde
                 const offset = (i * duration) / numRings;
-                const progress = ((pulse + offset) % duration) / duration; // 0 à 1
-                
-                // Rayon grandit avec le temps
+                const progress = ((pulse + offset) % duration) / duration; 
                 const radius = 10 + progress * maxRadius;
-                
-                // Opacité diminue avec l'expansion (s'estompe vers la fin)
                 const alpha = 0.6 * (1 - progress); 
                 
                 if (alpha > 0.01) {
@@ -336,19 +309,15 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
                 }
             }
 
-            // Dessiner le marqueur avec le décalage de rebond
             const drawOffset = sprite.width / 2;
-            
-            // Ombre au sol (fixe, mais s'agrandit/rétrécit inversement au saut pour le réalisme)
-            const shadowScale = 1 - (Math.abs(bounceY) / bounceHeight) * 0.4; // Plus petit quand haut
-            const shadowAlpha = 0.4 - (Math.abs(bounceY) / bounceHeight) * 0.2; // Plus clair quand haut
+            const shadowScale = 1 - (Math.abs(bounceY) / bounceHeight) * 0.4; 
+            const shadowAlpha = 0.4 - (Math.abs(bounceY) / bounceHeight) * 0.2; 
             
             ctx.beginPath();
             ctx.ellipse(x, y, 8 * shadowScale, 3 * shadowScale, 0, 0, PI2);
             ctx.fillStyle = `rgba(0,0,0,${shadowAlpha})`;
             ctx.fill();
 
-            // Le sprite saute
             ctx.drawImage(sprite, x - drawOffset, y - drawOffset + bounceY);
         }
     }, [map, clusters, showChurches, showEvents, selectedId, selectedType, participations]);
@@ -404,10 +373,8 @@ const CanvasLayer: React.FC<CanvasLayerProps> = React.memo(({
         };
     }, [map, draw, handleCanvasClick, initSprites]);
 
-    // Animation loop pour l'effet pulsant du marqueur sélectionné
     useEffect(() => {
         if (selectedId === null) {
-            // Pas de marqueur sélectionné, arrêter l'animation
             if (animationRef.current) {
                 cancelAnimationFrame(animationRef.current);
                 animationRef.current = null;
@@ -483,7 +450,6 @@ const BoundsTracker: React.FC<BoundsTrackerProps> = React.memo(({ onBoundsChange
         }
     });
 
-    // Initial bounds
     useEffect(() => {
         const b = map.getBounds();
         onBoundsChange({
@@ -497,7 +463,6 @@ const BoundsTracker: React.FC<BoundsTrackerProps> = React.memo(({ onBoundsChange
     return null;
 });
 
-// Capture map reference for external controls
 const MapRefCapture: React.FC<{ onMapReady: (map: L.Map) => void }> = ({ onMapReady }) => {
     const map = useMap();
     useEffect(() => {
@@ -537,8 +502,6 @@ const UserMarker: React.FC<{ position: [number, number] }> = React.memo(({ posit
     return null;
 });
 
-
-
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -552,20 +515,14 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
 
-    // ========== MAP REFERENCE ==========
     const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
-
-    // ========== DATA STATE ==========
     const [loading, setLoading] = useState(false);
-
-    // ========== MAP STATE ==========
     const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
     const [mapCenter, setMapCenter] = useState<[number, number]>([46.603354, 1.888334]);
     const [mapZoom, setMapZoom] = useState(6);
     const [currentBounds, setCurrentBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
     const [currentZoom, setCurrentZoom] = useState(6);
 
-    // ========== UI STATE ==========
     const [showGeoAlert, setShowGeoAlert] = useState(false);
     const [showChurches, setShowChurches] = useState(true);
     const [showEvents, setShowEvents] = useState(true);
@@ -576,12 +533,10 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
     const [resultsPanelOpen, setResultsPanelOpen] = useState(true);
     const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
 
-    // ========== NAVIGATION HISTORY (Bouton Retour) ==========
     const [previousPosition, setPreviousPosition] = useState<{ center: [number, number]; zoom: number } | null>(null);
     const [showReturnButton, setShowReturnButton] = useState(false);
     const returnButtonTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    // ========== PARTICIPATIONS ==========
     const [participations, setParticipations] = useState<Set<number>>(() => {
         try {
             const raw = localStorage.getItem('light_church:interested_events');
@@ -589,7 +544,6 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
         } catch { return new Set(); }
     });
 
-    // ========== DATA FETCHING (REFINED STRATEGY) ==========
     const [dataState, setDataState] = useState<{
         churches: Church[];
         events: Event[];
@@ -605,22 +559,15 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
     const lastFetchedBoundsRef = useRef<{ north: number; south: number; east: number; west: number } | null>(null);
     const lastZoomRef = useRef<number>(currentZoom);
 
-    // Strategy:
-    // 1. Zoom < 10: Server-side clusters with stable IDs
-    // 2. Zoom >= 10: Markers for Padded Viewport
     useEffect(() => {
         if (!currentBounds) return;
 
-        // Determination of whether we need to refetch
         const isZoomChanged = Math.abs(currentZoom - lastZoomRef.current) >= 1;
-        
         let needsRefetch = isZoomChanged;
         
-        // If zoom didn't change, check if we are still within the "padded" bounds from last fetch
         if (!needsRefetch && lastFetchedBoundsRef.current) {
             const b = currentBounds;
             const lb = lastFetchedBoundsRef.current;
-            // Buffer threshold: trigger fetch if we are within 10% of the edge of our cached area
             const paddingLat = (lb.north - lb.south) * 0.1;
             const paddingLng = (lb.east - lb.west) * 0.1;
             
@@ -644,7 +591,6 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
             setDataState(prev => ({ ...prev, fetching: true }));
             
             try {
-                // Calculate Padded Bounding Box (50% larger)
                 const latPad = (currentBounds.north - currentBounds.south) * 0.5;
                 const lngPad = (currentBounds.east - currentBounds.west) * 0.5;
                 const paddedBounds = {
@@ -655,7 +601,6 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                 };
 
                 if (currentZoom < 10) {
-                    // À faible zoom: récupérer clusters serveur pour la carte + données individuelles pour le ResultsPanel
                     const { fetchServerClusters } = await import('../../services/publicMapService');
                     const [clusters, markersData] = await Promise.all([
                         fetchServerClusters({ ...paddedBounds, zoom: currentZoom }),
@@ -671,7 +616,6 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                             cluster: c.count > 1,
                             cluster_id: c.id,
                             point_count: c.count,
-                            // Compteurs pour le rendu bi-colore
                             churchCount: type === 'church' ? c.count : 0,
                             eventCount: type === 'event' ? c.count : 0,
                             item: c.count === 1 ? { id: c.sampleId, church_name: c.sampleName, title: c.sampleName, latitude: c.lat, longitude: c.lng } : null,
@@ -711,14 +655,13 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
             }
         };
 
-        const timeoutId = setTimeout(fetchData, isZoomChanged ? 50 : 400); // Faster trigger on zoom
+        const timeoutId = setTimeout(fetchData, isZoomChanged ? 50 : 400); 
         return () => {
             cancelled = true;
             clearTimeout(timeoutId);
         };
     }, [currentBounds, currentZoom]);
 
-    // ========== CLIENT-SIDE CLUSTERING (COMBINED) ==========
     const { clusters, getClusterExpansionZoom } = useSupercluster(
         dataState.churches,
         dataState.events,
@@ -727,24 +670,19 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
         { radius: 60, maxZoom: 17 }
     );
 
-    // High Zoom: Use Client Clusters; Low Zoom: Merge Server Clusters
     const finalClusters = useMemo(() => {
         if (currentZoom >= 10) return clusters;
 
-        // Fusionner les clusters serveur proches pour créer des clusters bi-colores
         const churchClusters = dataState.serverClusters.churchClusters;
         const eventClusters = dataState.serverClusters.eventClusters;
 
         if (churchClusters.length === 0) return eventClusters;
         if (eventClusters.length === 0) return churchClusters;
 
-        // Seuil de distance pour fusionner (en degrés, ~50km à l'équateur)
         const mergeThreshold = 0.5;
-
         const merged: any[] = [];
         const usedEventIndices = new Set<number>();
 
-        // Pour chaque cluster d'église, chercher un cluster d'événement proche
         for (const church of churchClusters) {
             const [cLng, cLat] = church.geometry.coordinates;
             let foundMatch = false;
@@ -754,11 +692,9 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
 
                 const event = eventClusters[i];
                 const [eLng, eLat] = event.geometry.coordinates;
-
                 const dist = Math.sqrt((cLng - eLng) ** 2 + (cLat - eLat) ** 2);
 
                 if (dist < mergeThreshold) {
-                    // Fusionner les deux clusters
                     const totalChurches = church.properties.churchCount || 0;
                     const totalEvents = event.properties.eventCount || 0;
 
@@ -766,7 +702,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                         type: 'Feature',
                         geometry: {
                             type: 'Point',
-                            coordinates: [(cLng + eLng) / 2, (cLat + eLat) / 2] // Point médian
+                            coordinates: [(cLng + eLng) / 2, (cLat + eLat) / 2]
                         },
                         properties: {
                             cluster: true,
@@ -785,12 +721,9 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                 }
             }
 
-            if (!foundMatch) {
-                merged.push(church);
-            }
+            if (!foundMatch) merged.push(church);
         }
 
-        // Ajouter les clusters d'événements non fusionnés
         for (let i = 0; i < eventClusters.length; i++) {
             if (!usedEventIndices.has(i)) {
                 merged.push(eventClusters[i]);
@@ -800,7 +733,6 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
         return merged;
     }, [currentZoom, clusters, dataState.serverClusters.churchClusters, dataState.serverClusters.eventClusters]);
 
-    // ========== GET USER LOCATION ==========
     useEffect(() => {
         const fetchLocation = async () => {
             const position = await getUserLocation();
@@ -819,7 +751,6 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
         fetchLocation();
     }, []);
 
-    // ========== PARTICIPATIONS LISTENER ==========
     useEffect(() => {
         const refresh = () => {
             try {
@@ -832,7 +763,6 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
         return () => window.removeEventListener('light_church:interests_updated', refresh);
     }, []);
 
-    // ========== SYNC DRAWER WITH MODE ==========
     useEffect(() => {
         if (viewMode === 'participations') {
             setDetailDrawerOpen(false);
@@ -841,7 +771,6 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
         }
     }, [viewMode]);
 
-    // ========== HANDLE URL PARAM church_id (Aperçu Public) ==========
     useEffect(() => {
         const churchId = searchParams.get('church_id');
         if (churchId && mapInstance) {
@@ -849,10 +778,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                 try {
                     const church = await fetchChurchDetails(parseInt(churchId));
                     if (church && church.latitude && church.longitude) {
-                        // Centrer la carte sur l'église
                         mapInstance.flyTo([church.latitude, church.longitude], 16, { duration: 0.8 });
-
-                        // Ouvrir le drawer avec les détails de l'église
                         setSelectedItem(church);
                         setSelectedType('church');
                         setDetailDrawerOpen(true);
@@ -865,22 +791,17 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
         }
     }, [searchParams, mapInstance]);
 
-    // ========== HANDLERS ==========
     const handleBoundsChange = useCallback((bounds: any, zoom: number) => {
         setCurrentBounds(bounds);
         setCurrentZoom(zoom);
     }, []);
 
-    // ========== DRAWER HISTORY ==========
     const [drawerHistory, setDrawerHistory] = useState<Array<{ item: any, type: 'church' | 'event' }>>([]);
 
     const handleMarkerClick = useCallback(async (item: any, type: 'church' | 'event') => {
-        // Reset history when clicking a new marker from map
         setDrawerHistory([]);
-        
         setSelectedType(type);
         setDetailDrawerOpen(true);
-        // Important: Use item.latitude/longitude directly
         setMapCenter([item.latitude, item.longitude]);
         setMapZoom(16);
 
@@ -902,7 +823,6 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
 
     const handleClusterClick = useCallback((clusterId: number, lat: number, lng: number) => {
         if (currentZoom < 10) {
-            // High-level zoom steps for server clusters
             setMapCenter([lat, lng]);
             setMapZoom(currentZoom + 2);
         } else {
@@ -914,11 +834,9 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
 
     const handleCloseDrawer = useCallback(() => {
         if (drawerHistory.length > 0) {
-            // Go back in history
             const newHistory = [...drawerHistory];
             const previous = newHistory.pop();
             setDrawerHistory(newHistory);
-
             if (previous) {
                 setSelectedItem(previous.item);
                 setSelectedType(previous.type);
@@ -928,15 +846,12 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                 return;
             }
         }
-
-        // Normal close
         setDetailDrawerOpen(false);
         setSelectedItem(null);
         setDrawerHistory([]);
     }, [drawerHistory, mapInstance]);
 
     const handleLocationSelect = useCallback((lat: number, lng: number) => {
-        // Sauvegarder la position actuelle avant de se déplacer
         if (mapInstance) {
             const currentCenter = mapInstance.getCenter();
             const currentZoom = mapInstance.getZoom();
@@ -944,19 +859,10 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                 center: [currentCenter.lat, currentCenter.lng],
                 zoom: currentZoom
             });
-
-            // Afficher le bouton retour
             setShowReturnButton(true);
-
-            // Auto-masquer après 10 secondes
-            if (returnButtonTimeoutRef.current) {
-                clearTimeout(returnButtonTimeoutRef.current);
-            }
-            returnButtonTimeoutRef.current = setTimeout(() => {
-                setShowReturnButton(false);
-            }, 10000);
+            if (returnButtonTimeoutRef.current) clearTimeout(returnButtonTimeoutRef.current);
+            returnButtonTimeoutRef.current = setTimeout(() => setShowReturnButton(false), 10000);
         }
-
         setMapCenter([lat, lng]);
         setMapZoom(14);
     }, [mapInstance]);
@@ -972,11 +878,7 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
             mapInstance.flyTo(previousPosition.center, previousPosition.zoom, { duration: 0.5 });
             setShowReturnButton(false);
             setPreviousPosition(null);
-
-            // Annuler le timeout
-            if (returnButtonTimeoutRef.current) {
-                clearTimeout(returnButtonTimeoutRef.current);
-            }
+            if (returnButtonTimeoutRef.current) clearTimeout(returnButtonTimeoutRef.current);
         }
     }, [previousPosition, mapInstance]);
 
@@ -997,7 +899,6 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
 
             {isMobile ? (
                 <>
-                    {/* Safe area padding for iOS notch - Fixed position to stay above everything */}
                     <Box sx={{
                         pt: 'env(safe-area-inset-top, 8px)',
                         position: 'fixed',
@@ -1018,7 +919,6 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                         </Box>
                     </Box>
 
-                    {/* Backdrop flou quand on voit les participations */}
                     <AnimatePresence>
                         {viewMode === 'participations' && (
                             <motion.div
@@ -1041,7 +941,6 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                         )}
                     </AnimatePresence>
 
-                    {/* Bottom Sheet Google Maps style - toujours visible */}
                     <AnimatePresence mode="wait">
                         {viewMode === 'participations' ? (
                             <motion.div
@@ -1071,7 +970,6 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                     isMobileView
                                     currentBounds={currentBounds}
                                     userLocation={userLocation}
-                                    // Props pour les détails intégrés dans le bottom sheet
                                     showDetails={detailDrawerOpen}
                                     onBackToList={handleCloseDrawer}
                                     detailsTitle={selectedType === 'event' ? (selectedItem as any)?.title : (selectedItem as any)?.church_name}
@@ -1084,11 +982,9 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                             data={selectedItem}
                                             type={selectedType}
                                             onOrganizerClick={async (id) => {
-                                                // Sauvegarder l'état actuel dans l'historique
                                                 if (selectedItem && selectedType) {
                                                     setDrawerHistory(prev => [...prev, { item: selectedItem, type: selectedType }]);
                                                 }
-                                                // Toujours récupérer les détails complets de l'église
                                                 try {
                                                     const church = await fetchChurchDetails(Number(id));
                                                     if (church) {
@@ -1111,30 +1007,28 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                     </AnimatePresence>
                 </>
             ) : (
-                // DESKTOP LAYOUT (Floating Cards)
                 <Box
                     sx={{
                         position: 'absolute',
                         top: 16,
                         left: 16,
                         width: 400,
-                        zIndex: 2000, // Higher than map
+                        zIndex: 2000,
                         display: 'flex',
                         flexDirection: 'column',
                         gap: 1.5,
-                        pointerEvents: 'none', // Allow clicks to pass through spacer areas
+                        pointerEvents: 'none',
                         transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                         transform: isPanelCollapsed ? 'translateX(-420px)' : 'translateX(0)',
                     }}
                 >
-                    {/* TOGGLE BUTTON - Always visible */}
                     <Paper
                         elevation={4}
                         onClick={() => setIsPanelCollapsed(!isPanelCollapsed)}
                         sx={{
                             position: 'absolute',
-                            right: -24, // Sticks out to the right
-                            top: 68, // Aligned between search and results approximately
+                            right: -24,
+                            top: 68,
                             width: 24,
                             height: 48,
                             bgcolor: 'white',
@@ -1158,21 +1052,16 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                         />
                     </Paper>
 
-                    {/* MAIN CONTENT - Pointer events auto to re-enable clicking */}
                     <Box sx={{ pointerEvents: 'auto' }}>
-                        {/* 1. Search Bar */}
                         {viewMode === 'explore' && !detailDrawerOpen && (
                             <SearchPanel
-                                floating // Enable floating style (strong shadow)
-                                embedded // Keep internal styling clean
+                                floating 
+                                embedded
                                 onSearch={() => { }} 
                                 onFilterChange={(f) => { setShowChurches(f.churches); setShowEvents(f.events); }}
                                 onToggleList={() => setResultsPanelOpen(!resultsPanelOpen)}
-                                onLocationSelect={(lat, lng, label) => {
+                                onLocationSelect={(lat, lng) => {
                                     mapInstance?.flyTo([lat, lng], 14, { duration: 0.8 });
-                                    if (label) {
-                                        // Show visual feedback or correct map center
-                                    }
                                     setPreviousPosition({ center: mapCenter, zoom: mapZoom });
                                     setShowReturnButton(true);
                                     if (returnButtonTimeoutRef.current) clearTimeout(returnButtonTimeoutRef.current);
@@ -1181,17 +1070,16 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                             />
                         )}
 
-                        {/* 2. Results / Details Card */}
                         <Paper
                             elevation={3}
                             sx={{
                                 mt: 1.5,
-                                maxHeight: 'calc(100vh - 140px)', // Vertical space constraint
+                                maxHeight: 'calc(100vh - 140px)',
                                 overflow: 'hidden',
                                 borderRadius: 2,
                                 display: 'flex',
                                 flexDirection: 'column',
-                                bgcolor: 'transparent', // Let children handle background
+                                bgcolor: 'transparent',
                                 border: 'none'
                             }}
                         >
@@ -1220,11 +1108,9 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                                             data={selectedItem}
                                             type={selectedType}
                                             onOrganizerClick={async (id) => {
-                                                // Sauvegarder l'état actuel dans l'historique
                                                 if (selectedItem && selectedType) {
                                                     setDrawerHistory(prev => [...prev, { item: selectedItem, type: selectedType }]);
                                                 }
-                                                // Toujours récupérer les détails complets de l'église
                                                 try {
                                                     const church = await fetchChurchDetails(Number(id));
                                                     if (church) {
@@ -1292,7 +1178,6 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                 <BoundsTracker onBoundsChange={handleBoundsChange} />
                 <MapRefCapture onMapReady={setMapInstance} />
 
-
                 {userLocation && <UserMarker position={[userLocation.latitude, userLocation.longitude]} />}
 
                 <CanvasLayer
@@ -1307,7 +1192,6 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                     onClusterClick={handleClusterClick}
                 />
 
-                {/* Map Controls (FABs) */}
                 <MapControls
                     onLocate={handleRecenter}
                     isLoadingLocation={false}
@@ -1317,11 +1201,10 @@ const HomePage: React.FC<HomePageProps> = ({ viewMode = 'explore' }) => {
                     userLocation={userLocation}
                     participationsCount={participations.size}
                     onParticipationsClick={() => navigate('/my-participations')}
-                    onHomeClick={() => navigate('/')}
+                    onHomeClick={() => navigate('/map')}
                 />
             </MapContainer>
 
-            {/* Bouton Retour flottant - apparaît après une recherche de lieu */}
             {showReturnButton && previousPosition && (
                 <Box
                     onClick={handleReturnToPrevious}
