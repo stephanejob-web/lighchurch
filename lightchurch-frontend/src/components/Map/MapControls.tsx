@@ -55,9 +55,9 @@ const MapControls: React.FC<MapControlsProps> = ({
             <Box
                 sx={{
                     position: 'absolute',
-                    top: isMobile ? 84 : 80, // Under search bar
+                    top: isMobile ? 120 : 80, // Under search bar chips
                     right: 16,
-                    zIndex: 1000,
+                    zIndex: isMobile ? 3000 : 1000,
                 }}
             >
                 <Tooltip title={mapType === 'satellite' ? 'Plan' : 'Satellite'} placement="left">
@@ -102,7 +102,7 @@ const MapControls: React.FC<MapControlsProps> = ({
                     top: isMobile ? '35%' : 'auto', // Higher on mobile to avoid sheet
                     bottom: isMobile ? 'auto' : 24,
                     right: 16,
-                    zIndex: 1000, // Reduced zIndex for mobile to stay below overlays but above map
+                    zIndex: isMobile ? 3000 : 1000,
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 1.5,
