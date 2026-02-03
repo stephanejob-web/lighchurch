@@ -7,6 +7,7 @@ import LiveStatCounter from '../../components/common/LiveStatCounter';
 import ThemeToggle from '../../components/common/ThemeToggle';
 import ParticleBackground from '../../components/landing/ParticleBackground';
 import AnimatedDiscoveryMap from '../../components/animations/AnimatedDiscoveryMap';
+import MobileAppShowcase from '../../components/landing/MobileAppShowcase';
 import { fetchPlatformStats } from '../../services/publicMapService';
 
 const MotionBox = motion(Box);
@@ -281,6 +282,9 @@ const LandingPage: React.FC = () => {
                     </Grid>
                 </Container>
             </Box>
+
+            {/* MOBILE APP Section */}
+            <MobileAppShowcase />
 
             {/* Constraints Section */}
             <Box sx={{ py: { xs: 8, md: 16 }, position: 'relative' }}>
