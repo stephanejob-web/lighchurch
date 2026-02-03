@@ -107,7 +107,7 @@ const ForPastorsPage: React.FC = () => {
                                 <Typography sx={{ color: 'primary.main', fontWeight: 600, fontSize: '0.75rem', letterSpacing: 1 }}>RÉSEAU PASTORAL</Typography>
                             </Box>
 
-                            <Typography variant="h1" sx={{ fontSize: { xs: '2.5rem', md: '4rem' }, fontWeight: 800, lineHeight: 1.1, mb: 3 }}>
+                            <Typography variant="h1" sx={{ fontSize: { xs: '2rem', sm: '2.5rem', md: '4rem' }, fontWeight: 800, lineHeight: 1.1, mb: 3 }}>
                                 Un Réseau National pour <br />
                                 <Box component="span" sx={{
                                     background: theme.palette.mode === 'light' 
@@ -120,7 +120,7 @@ const ForPastorsPage: React.FC = () => {
                                 </Box>
                             </Typography>
 
-                            <Typography sx={{ fontSize: '1.2rem', color: 'text.secondary', mb: 5, lineHeight: 1.6, maxWidth: 600 }}>
+                            <Typography sx={{ fontSize: { xs: '1rem', md: '1.2rem' }, color: 'text.secondary', mb: 5, lineHeight: 1.6, maxWidth: 600 }}>
                                 LightChurch crée un pont entre les pasteurs, les responsables et les églises de toute la France pour favoriser l'unité, la collaboration et l'action commune.
                             </Typography>
 
@@ -129,7 +129,17 @@ const ForPastorsPage: React.FC = () => {
                                     variant="contained"
                                     size="large"
                                     onClick={() => navigate('/register')}
-                                    sx={{ bgcolor: 'primary.main', borderRadius: 50, px: 4, py: 2, textTransform: 'none', fontWeight: 600, fontSize: '1.1rem', '&:hover': { bgcolor: 'primary.dark' } }}
+                                    sx={{ 
+                                        bgcolor: 'primary.main', 
+                                        borderRadius: 50, 
+                                        px: 4, 
+                                        py: { xs: 1.5, md: 2 }, 
+                                        textTransform: 'none', 
+                                        fontWeight: 700, 
+                                        fontSize: '1.1rem', 
+                                        width: { xs: '100%', sm: 'auto' },
+                                        '&:hover': { bgcolor: 'primary.dark' } 
+                                    }}
                                 >
                                     Référencer mon église gratuitement
                                 </Button>

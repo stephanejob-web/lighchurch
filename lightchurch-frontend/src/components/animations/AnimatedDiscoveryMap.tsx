@@ -14,7 +14,7 @@ const AnimatedDiscoveryMap: React.FC = () => {
         <Box sx={{ 
             position: 'relative', 
             width: '100%', 
-            height: '500px', 
+            height: { xs: '350px', md: '500px' }, 
             bgcolor: 'background.paper', 
             borderRadius: 6, 
             border: '1px solid',

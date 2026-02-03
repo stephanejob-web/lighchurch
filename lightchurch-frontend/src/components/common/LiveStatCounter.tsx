@@ -46,9 +46,14 @@ const LiveStatCounter: React.FC<LiveStatCounterProps> = ({ value, label, delay =
     }, [withIncrement, spring]);
 
     return (
-        <Box>
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                <Typography variant="h3" sx={{ fontWeight: 700, fontSize: { xs: '2rem', md: '2.5rem' }, lineHeight: 1, display: 'flex' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'center', md: 'flex-start' }, textAlign: { xs: 'center', md: 'left' } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 1.5 }, flexWrap: 'wrap', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+                <Typography variant="h3" sx={{ 
+                    fontWeight: 800, 
+                    fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' }, 
+                    lineHeight: 1,
+                    letterSpacing: '-0.5px'
+                }}>
                     <motion.span>{displayValue}</motion.span>
                 </Typography>
                 
@@ -59,13 +64,10 @@ const LiveStatCounter: React.FC<LiveStatCounterProps> = ({ value, label, delay =
                     gap: 0.5, 
                     bgcolor: alpha(theme.palette.error.main, 0.1), 
                     border: '1px solid',
-                    borderColor: alpha(theme.palette.error.main, 0.3),
-                    borderRadius: 1, 
-                    px: 0.8, 
-                    py: 0.2, 
-                    ml: 1.5,
-                    height: 'fit-content',
-                    mt: 1
+                    borderColor: alpha(theme.palette.error.main, 0.2),
+                    borderRadius: 1.5, 
+                    px: 1, 
+                    py: 0.4, 
                 }}>
                     <MotionBox
                         animate={{ opacity: [1, 0.4, 1] }}
@@ -79,8 +81,8 @@ const LiveStatCounter: React.FC<LiveStatCounterProps> = ({ value, label, delay =
                         }}
                     />
                     <Typography sx={{ 
-                        fontSize: '0.6rem', 
-                        fontWeight: 700, 
+                        fontSize: '0.65rem', 
+                        fontWeight: 800, 
                         color: 'error.main', 
                         letterSpacing: 0.5,
                         lineHeight: 1
@@ -89,7 +91,14 @@ const LiveStatCounter: React.FC<LiveStatCounterProps> = ({ value, label, delay =
                     </Typography>
                 </Box>
             </Box>
-            <Typography sx={{ opacity: 0.5, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 1, mt: 0.5 }}>
+            <Typography sx={{ 
+                color: 'text.secondary', 
+                fontSize: { xs: '0.7rem', md: '0.75rem' }, 
+                textTransform: 'uppercase', 
+                letterSpacing: 1, 
+                mt: 1,
+                fontWeight: 600
+            }}>
                 {label}
             </Typography>
         </Box>
