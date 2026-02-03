@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
-import { Church, User, Zap } from 'lucide-react';
+import { Church, UserRound, Zap } from 'lucide-react';
 
 const MotionBox = motion(Box);
 
@@ -233,22 +233,24 @@ const UserBranch = ({ angle, distance, delay }: { angle: number, distance: numbe
                 */}
                 <CounterRotator offsetAngle={angle}>
                     <Box sx={{ 
-                        width: 32, 
-                        height: 32, 
-                        bgcolor: 'rgba(255,255,255,0.05)', 
+                        width: 36, 
+                        height: 36, 
+                        bgcolor: '#1a1d24', 
                         borderRadius: '50%', 
                         display: 'flex', 
                         alignItems: 'center', 
                         justifyContent: 'center',
-                        border: '1px solid rgba(255,255,255,0.1)'
+                        border: '1px solid rgba(66, 133, 244, 0.4)',
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
                     }}>
-                        <User size={14} color="rgba(255,255,255,0.6)" />
+                        <UserRound size={16} color="white" />
                     </Box>
                 </CounterRotator>
             </Box>
         </Box>
     )
 }
+
 
 // Helper to keep content upright while parent rotates
 const CounterRotator = ({ children, offsetAngle = 0 }: { children: React.ReactNode, offsetAngle?: number }) => {
