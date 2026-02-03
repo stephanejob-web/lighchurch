@@ -6,6 +6,8 @@ import { motion } from 'framer-motion';
 import ParticleBackground from '../../components/landing/ParticleBackground';
 import InteractiveChurchNetwork from '../../components/animations/InteractiveChurchNetwork';
 import AnimatedDiscoveryMap from '../../components/animations/AnimatedDiscoveryMap';
+import LiveStatCounter from '../../components/common/LiveStatCounter';
+import { fetchPlatformStats } from '../../services/publicMapService';
 
 const MotionBox = motion(Box);
 
@@ -13,6 +15,19 @@ const LandingPage: React.FC = () => {
     const navigate = useNavigate();
     const [isScrolled, setIsScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [stats, setStats] = useState({ churches: 0, events: 0 });
+
+    useEffect(() => {
+        const loadStats = async () => {
+            try {
+                const data = await fetchPlatformStats();
+                setStats(data);
+            } catch (error) {
+                console.error('Failed to load stats', error);
+            }
+        };
+        loadStats();
+    }, []);
 
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -110,8 +125,8 @@ const LandingPage: React.FC = () => {
                                     <Button variant="outlined" size="large" onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} endIcon={<ArrowRight size={20} />} sx={{ borderColor: 'rgba(255, 255, 255, 0.3)', color: 'white', borderRadius: 50, py: 1.5, px: 4, fontSize: '1rem', textTransform: 'none', fontWeight: 500, transition: 'all 0.3s ease', '&:hover': { borderColor: 'white', bgcolor: 'rgba(255, 255, 255, 0.05)', transform: 'translateX(5px)' } }}>Découvrir les fonctionnalités</Button>
                                 </Stack>
                                 <Stack direction="row" spacing={8}>
-                                    <Box><Typography variant="h3" sx={{ fontWeight: 700, fontSize: { xs: '2rem', md: '2.5rem' } }}>10000</Typography><Typography sx={{ opacity: 0.5, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 1 }}>Églises indexées</Typography></Box>
-                                    <Box><Typography variant="h3" sx={{ fontWeight: 700, fontSize: { xs: '2rem', md: '2.5rem' } }}>39878</Typography><Typography sx={{ opacity: 0.5, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 1 }}>Événements actifs</Typography></Box>
+                                    <LiveStatCounter value={stats.churches || 10000} label="Églises indexées" delay={0.2} />
+                                    <LiveStatCounter value={stats.events || 39878} label="Événements actifs" delay={0.4} />
                                 </Stack>
                             </MotionBox>
                         </Grid>
