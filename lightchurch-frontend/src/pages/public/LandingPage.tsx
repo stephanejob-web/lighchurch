@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Button, Container, Stack, IconButton, Drawer, Divider } from '@mui/material';
+import { Box, Typography, Button, Container, Stack, IconButton, Drawer, Divider, Grid } from '@mui/material';
 import { Menu as MenuIcon, X as CloseIcon, Search, CheckCircle2, XCircle, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ParticleBackground from '../../components/landing/ParticleBackground';
+import InteractiveChurchNetwork from '../../components/animations/InteractiveChurchNetwork';
 
 const MotionBox = motion(Box);
 
@@ -60,20 +61,32 @@ const LandingPage: React.FC = () => {
             <Box sx={{ position: 'relative', pt: { xs: 18, md: 24 }, pb: { xs: 12, md: 20 }, minHeight: '100vh' }}>
                 <ParticleBackground />
                 <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
-                    <Box sx={{ maxWidth: 700 }}>
-                        <MotionBox initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-                            <Typography variant="h1" sx={{ fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4.5rem' }, fontWeight: 700, lineHeight: 1.1, mb: 3, letterSpacing: '-1px' }}>Trouvez une église <Box component="span" sx={{ color: '#4285F4' }}>près de chez vous</Box></Typography>
-                            <Typography sx={{ fontSize: { xs: '1rem', md: '1.15rem' }, opacity: 0.7, mb: 5, maxWidth: 550, lineHeight: 1.7 }}>L'information sur les églises est <Box component="span" sx={{ color: '#EA4335' }}>dispersée</Box>, les horaires <Box component="span" sx={{ color: '#EA4335' }}>rarement à jour</Box>. LightChurch centralise tout sur une carte interactive pour vous aider à trouver une communauté.</Typography>
-                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 8 }}>
-                                <Button variant="contained" size="large" onClick={() => navigate('/map')} startIcon={<Search size={20} />} sx={{ bgcolor: '#4285F4', borderRadius: 50, py: 1.5, px: 4, fontSize: '1rem', textTransform: 'none', fontWeight: 500, '&:hover': { bgcolor: '#3367D6' } }}>Lancer l'expérience</Button>
-                                <Button variant="outlined" size="large" onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} endIcon={<ArrowRight size={20} />} sx={{ borderColor: 'rgba(255, 255, 255, 0.3)', color: 'white', borderRadius: 50, py: 1.5, px: 4, fontSize: '1rem', textTransform: 'none', fontWeight: 500, transition: 'all 0.3s ease', '&:hover': { borderColor: 'white', bgcolor: 'rgba(255, 255, 255, 0.05)', transform: 'translateX(5px)' } }}>Découvrir les fonctionnalités</Button>
-                            </Stack>
-                            <Stack direction="row" spacing={8}>
-                                <Box><Typography variant="h3" sx={{ fontWeight: 700, fontSize: { xs: '2rem', md: '2.5rem' } }}>10000</Typography><Typography sx={{ opacity: 0.5, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 1 }}>Églises indexées</Typography></Box>
-                                <Box><Typography variant="h3" sx={{ fontWeight: 700, fontSize: { xs: '2rem', md: '2.5rem' } }}>39878</Typography><Typography sx={{ opacity: 0.5, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 1 }}>Événements actifs</Typography></Box>
-                            </Stack>
-                        </MotionBox>
-                    </Box>
+                    <Grid container spacing={4} alignItems="center">
+                        <Grid item xs={12} md={7}>
+                            <MotionBox initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+                                <Typography variant="h1" sx={{ fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4.5rem' }, fontWeight: 700, lineHeight: 1.1, mb: 3, letterSpacing: '-1px' }}>Trouvez une église <Box component="span" sx={{ color: '#4285F4' }}>près de chez vous</Box></Typography>
+                                <Typography sx={{ fontSize: { xs: '1rem', md: '1.15rem' }, opacity: 0.7, mb: 5, maxWidth: 550, lineHeight: 1.7 }}>L'information sur les églises est <Box component="span" sx={{ color: '#EA4335' }}>dispersée</Box>, les horaires <Box component="span" sx={{ color: '#EA4335' }}>rarement à jour</Box>. LightChurch centralise tout sur une carte interactive pour vous aider à trouver une communauté.</Typography>
+                                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 8 }}>
+                                    <Button variant="contained" size="large" onClick={() => navigate('/map')} startIcon={<Search size={20} />} sx={{ bgcolor: '#4285F4', borderRadius: 50, py: 1.5, px: 4, fontSize: '1rem', textTransform: 'none', fontWeight: 500, '&:hover': { bgcolor: '#3367D6' } }}>Lancer l'expérience</Button>
+                                    <Button variant="outlined" size="large" onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} endIcon={<ArrowRight size={20} />} sx={{ borderColor: 'rgba(255, 255, 255, 0.3)', color: 'white', borderRadius: 50, py: 1.5, px: 4, fontSize: '1rem', textTransform: 'none', fontWeight: 500, transition: 'all 0.3s ease', '&:hover': { borderColor: 'white', bgcolor: 'rgba(255, 255, 255, 0.05)', transform: 'translateX(5px)' } }}>Découvrir les fonctionnalités</Button>
+                                </Stack>
+                                <Stack direction="row" spacing={8}>
+                                    <Box><Typography variant="h3" sx={{ fontWeight: 700, fontSize: { xs: '2rem', md: '2.5rem' } }}>10000</Typography><Typography sx={{ opacity: 0.5, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 1 }}>Églises indexées</Typography></Box>
+                                    <Box><Typography variant="h3" sx={{ fontWeight: 700, fontSize: { xs: '2rem', md: '2.5rem' } }}>39878</Typography><Typography sx={{ opacity: 0.5, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 1 }}>Événements actifs</Typography></Box>
+                                </Stack>
+                            </MotionBox>
+                        </Grid>
+                        <Grid item xs={12} md={5} sx={{ display: { xs: 'none', md: 'block' } }}>
+                            <MotionBox
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 1, delay: 0.2 }}
+                                sx={{ height: 500, position: 'relative' }}
+                            >
+                                <InteractiveChurchNetwork />
+                            </MotionBox>
+                        </Grid>
+                    </Grid>
                 </Container>
             </Box>
             <Box sx={{ py: { xs: 10, md: 16 }, position: 'relative' }}><ParticleBackground /><Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}><Box sx={{ textAlign: 'center', mb: 8 }}><Typography sx={{ color: '#EA4335', fontWeight: 600, letterSpacing: 2, mb: 2, fontSize: '0.85rem' }}>LE CONSTAT</Typography><Typography variant="h2" sx={{ fontWeight: 700, mb: 2, fontSize: { xs: '1.75rem', md: '2.5rem' } }}>Trouver une église ne devrait pas être si compliqué.</Typography><Typography sx={{ opacity: 0.5, maxWidth: 600, mx: 'auto' }}>Vous déménagez, vous voyagez, ou vous cherchez simplement une communauté ? Aujourd'hui, c'est un parcours du combattant.</Typography></Box><Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, justifyContent: 'center' }}>{constraints.map((item, i) => (<Box key={i} sx={{ width: { xs: '100%', md: 'calc(33.333% - 16px)' }, maxWidth: 380 }}><Box sx={{ p: 5, height: '100%', bgcolor: 'rgba(255, 255, 255, 0.03)', borderRadius: 4, border: '1px solid rgba(255, 255, 255, 0.08)', textAlign: 'center', transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-5px)', borderColor: 'rgba(234, 67, 53, 0.3)' } }}><Typography sx={{ fontSize: '3rem', mb: 3 }}>{item.emoji}</Typography><Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#EA4335' }}>{item.title}</Typography><Typography sx={{ opacity: 0.5, fontSize: '0.95rem' }}>{item.desc}</Typography></Box></Box>))}</Box></Container></Box>

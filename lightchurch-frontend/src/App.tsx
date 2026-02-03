@@ -24,6 +24,7 @@ import AdminChurches from './pages/AdminChurches';
 import AdminEvents from './pages/AdminEvents';
 import AdminRegistrations from './pages/AdminRegistrations';
 import ErrorBoundary from './components/ErrorBoundary';
+import ScrollToTop from './components/ScrollToTop';
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
         <CssBaseline />
         <AuthProvider>
           <BrowserRouter>
+            <ScrollToTop />
             <Routes>
               {/* Pages publiques */}
               <Route path="/" element={<LandingPage />} />

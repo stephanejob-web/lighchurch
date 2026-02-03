@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Box,
@@ -19,103 +19,12 @@ import {
     BookOpen
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import InteractiveChurchNetwork from '../../components/animations/InteractiveChurchNetwork';
 
 const MotionBox = motion(Box);
 
 const ForPastorsPage: React.FC = () => {
     const navigate = useNavigate();
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        let width = canvas.width = window.innerWidth;
-        let height = canvas.height = window.innerHeight;
-
-        let particles: Particle[] = [];
-        const particleCount = 60;
-        const connectionDistance = 200;
-
-        class Particle {
-            x: number;
-            y: number;
-            vx: number;
-            vy: number;
-            size: number;
-
-            constructor() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                this.vx = (Math.random() - 0.5) * 0.5;
-                this.vy = (Math.random() - 0.5) * 0.5;
-                this.size = Math.random() * 2 + 1;
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-
-                if (this.x < 0 || this.x > width) this.vx = -this.vx;
-                if (this.y < 0 || this.y > height) this.vy = -this.vy;
-            }
-
-            draw() {
-                if (!ctx) return;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(66, 133, 244, 0.4)';
-                ctx.fill();
-            }
-        }
-
-        const init = () => {
-            particles = [];
-            for (let i = 0; i < particleCount; i++) {
-                particles.push(new Particle());
-            }
-        };
-
-        const animate = () => {
-            ctx.clearRect(0, 0, width, height);
-            particles.forEach((p, i) => {
-                p.update();
-                p.draw();
-
-                for (let j = i + 1; j < particles.length; j++) {
-                    const p2 = particles[j];
-                    const dx = p.x - p2.x;
-                    const dy = p.y - p2.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-
-                    if (dist < connectionDistance) {
-                        ctx.beginPath();
-                        ctx.strokeStyle = `rgba(66, 133, 244, ${0.15 * (1 - dist / connectionDistance)})`;
-                        ctx.lineWidth = 1;
-                        ctx.moveTo(p.x, p.y);
-                        ctx.lineTo(p2.x, p2.y);
-                        ctx.stroke();
-                    }
-                }
-            });
-            requestAnimationFrame(animate);
-        };
-
-        const handleResize = () => {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-            init();
-        };
-
-        window.addEventListener('resize', handleResize);
-        init();
-        animate();
-
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
 
     // Scroll to top on mount
     useEffect(() => {
@@ -157,18 +66,7 @@ const ForPastorsPage: React.FC = () => {
 
     return (
         <Box sx={{ bgcolor: '#050505', color: 'white', minHeight: '100vh', position: 'relative', overflowX: 'hidden' }}>
-            {/* Background Animation */}
-            <canvas
-                ref={canvasRef}
-                style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    zIndex: 0,
-                    pointerEvents: 'none',
-                    opacity: 0.6
-                }}
-            />
+
 
             {/* Gradient Overlay */}
             <Box
@@ -249,84 +147,13 @@ const ForPastorsPage: React.FC = () => {
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 1, delay: 0.2 }}
-                            sx={{ position: 'relative' }}
+                            sx={{ 
+                                position: 'relative',
+                                width: '100%',
+                                height: { xs: 400, md: 500 }
+                            }}
                         >
-                            <Box sx={{ 
-                                position: 'relative', 
-                                width: '100%', 
-                                aspectRatio: '1',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}>
-                                {/* Central Hub Visual */}
-                                <Box sx={{ 
-                                    width: 120, 
-                                    height: 120, 
-                                    bgcolor: 'rgba(66, 133, 244, 0.2)', 
-                                    borderRadius: '50%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    border: '1px solid rgba(66, 133, 244, 0.4)',
-                                    boxShadow: '0 0 50px rgba(66, 133, 244, 0.3)',
-                                    zIndex: 2
-                                }}>
-                                    <Typography variant="h4">🌐</Typography>
-                                </Box>
-                                
-                                {/* Orbiting Nodes */}
-                                {[0, 1, 2, 3, 4, 5].map((i) => (
-                                    <MotionBox
-                                        key={i}
-                                        animate={{ 
-                                            rotate: 360,
-                                        }}
-                                        transition={{ 
-                                            duration: 20 + i * 5, 
-                                            repeat: Infinity, 
-                                            ease: "linear" 
-                                        }}
-                                        sx={{ 
-                                            position: 'absolute',
-                                            width: '100%',
-                                            height: '100%',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center'
-                                        }}
-                                    >
-                                        <Box sx={{ 
-                                            width: 40, 
-                                            height: 40, 
-                                            bgcolor: 'rgba(255,255,255,0.05)', 
-                                            borderRadius: '50%',
-                                            border: '1px solid rgba(255,255,255,0.1)',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            transform: `translate(${Math.cos(i * 60 * Math.PI / 180) * 150}px, ${Math.sin(i * 60 * Math.PI / 180) * 150}px)`,
-                                            fontSize: '1.2rem'
-                                        }}>
-                                            ⛪
-                                        </Box>
-                                    </MotionBox>
-                                ))}
-                                
-                                {/* Connection Lines (SVG) */}
-                                <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-                                    {[0, 1, 2, 3, 4, 5].map((i) => (
-                                        <line 
-                                            key={i}
-                                            x1="50%" y1="50%" 
-                                            x2={`${50 + Math.cos(i * 60 * Math.PI / 180) * 35}%`} 
-                                            y2={`${50 + Math.sin(i * 60 * Math.PI / 180) * 35}%`}
-                                            stroke="rgba(66, 133, 244, 0.2)"
-                                            strokeWidth="1"
-                                        />
-                                    ))}
-                                </svg>
-                            </Box>
+                            <InteractiveChurchNetwork />
                         </MotionBox>
                     </Grid>
                 </Grid>
