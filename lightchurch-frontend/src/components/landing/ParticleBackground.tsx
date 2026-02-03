@@ -1,7 +1,10 @@
 import React, { useEffect, useRef } from 'react';
+import { useTheme } from '@mui/material';
 
 const ParticleBackground: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const theme = useTheme();
+    const isDarkMode = theme.palette.mode === 'dark';
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -9,6 +12,10 @@ const ParticleBackground: React.FC = () => {
 
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
+
+        const particleColor = isDarkMode ? '66, 133, 244' : '66, 133, 244'; // Keep same blue but adjust opacity below
+        const particleOpacity = isDarkMode ? 0.4 : 0.2;
+        const lineOpacity = isDarkMode ? 0.15 : 0.1;
 
         let particles: Particle[] = [];
         let animationFrameId: number;
@@ -52,7 +59,7 @@ const ParticleBackground: React.FC = () => {
 
             draw() {
                 if (!ctx) return;
-                ctx.fillStyle = `rgba(66, 133, 244, ${this.opacity})`;
+                ctx.fillStyle = `rgba(${particleColor}, ${this.opacity * (particleOpacity / 0.5)})`;
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
                 ctx.fill();
@@ -80,7 +87,7 @@ const ParticleBackground: React.FC = () => {
 
                     if (distance < maxDistance) {
                         const opacity = 1 - distance / maxDistance;
-                        ctx.strokeStyle = `rgba(66, 133, 244, ${opacity * 0.15})`;
+                        ctx.strokeStyle = `rgba(${particleColor}, ${opacity * lineOpacity})`;
                         ctx.lineWidth = 1;
                         ctx.beginPath();
                         ctx.moveTo(particles[a].x, particles[a].y);

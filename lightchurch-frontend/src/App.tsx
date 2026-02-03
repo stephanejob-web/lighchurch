@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ThemeProvider, CssBaseline } from '@mui/material';
+import { CssBaseline } from '@mui/material';
 import { AuthProvider } from './context/AuthContext';
-import theme from './theme/theme';
+import { ColorModeProvider } from './context/ThemeContext';
 import PublicLayout from './layouts/PublicLayout';
 import MapLayout from './layouts/MapLayout';
 import HomePage from './pages/public/HomePage';
@@ -29,7 +29,7 @@ import ScrollToTop from './components/ScrollToTop';
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider theme={theme}>
+      <ColorModeProvider>
         <CssBaseline />
         <AuthProvider>
           <BrowserRouter>
@@ -88,7 +88,7 @@ function App() {
             </Routes>
           </BrowserRouter>
         </AuthProvider>
-      </ThemeProvider>
+      </ColorModeProvider>
     </ErrorBoundary>
   );
 }

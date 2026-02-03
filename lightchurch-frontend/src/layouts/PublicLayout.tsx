@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { Login as LoginIcon, Dashboard as DashboardIcon } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
+import ThemeToggle from '../components/common/ThemeToggle';
 
 /**
  * Hook personnalisé pour détecter le scroll
@@ -50,9 +51,11 @@ const PublicLayout: React.FC = React.memo(() => {
                 position="fixed"
                 elevation={trigger ? 4 : 0}
                 sx={{
-                    backgroundColor: 'white',
+                    backgroundColor: 'background.paper',
                     color: 'text.primary',
-                    zIndex: (theme) => theme.zIndex.drawer + 1
+                    zIndex: (theme) => theme.zIndex.drawer + 1,
+                    borderBottom: '1px solid',
+                    borderColor: 'divider'
                 }}
             >
                     <Container maxWidth={false} disableGutters>
@@ -75,7 +78,7 @@ const PublicLayout: React.FC = React.memo(() => {
                             </Typography>
 
                             {/* Navigation */}
-                            <Stack direction="row" spacing={2} alignItems="center">
+                            <Stack direction="row" spacing={1} alignItems="center">
                                 <Button
                                     color="inherit"
                                     component={Link}
@@ -91,6 +94,8 @@ const PublicLayout: React.FC = React.memo(() => {
                                 >
                                     Mes participations
                                 </Button>
+
+                                <ThemeToggle />
 
                                 {/* Bouton Connexion ou Dashboard */}
                                 {user ? (
