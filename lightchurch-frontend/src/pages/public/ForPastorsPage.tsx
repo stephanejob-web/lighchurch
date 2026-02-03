@@ -7,7 +7,9 @@ import {
     Container,
     Stack,
     IconButton,
-    Grid
+    Grid,
+    useTheme,
+    alpha
 } from '@mui/material';
 import {
     ChevronLeft,
@@ -19,14 +21,15 @@ import {
     BookOpen
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import ParticleBackground from '../../components/landing/ParticleBackground';
 import InteractiveChurchNetwork from '../../components/animations/InteractiveChurchNetwork';
 
 const MotionBox = motion(Box);
 
 const ForPastorsPage: React.FC = () => {
     const navigate = useNavigate();
+    const theme = useTheme();
 
-    // Scroll to top on mount
     useEffect(() => {
         window.scrollTo(0, 0);
     }, []);
@@ -65,36 +68,26 @@ const ForPastorsPage: React.FC = () => {
     ];
 
     return (
-        <Box sx={{ bgcolor: '#050505', color: 'white', minHeight: '100vh', position: 'relative', overflowX: 'hidden' }}>
-
-
-            {/* Gradient Overlay */}
-            <Box
-                sx={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'radial-gradient(circle at 50% 50%, transparent 0%, rgba(5, 5, 5, 0.4) 100%)',
-                    zIndex: 1,
-                    pointerEvents: 'none'
-                }}
-            />
+        <Box sx={{ bgcolor: 'background.default', color: 'text.primary', minHeight: '100vh', position: 'relative', overflowX: 'hidden' }}>
+            <ParticleBackground />
 
             {/* Header */}
             <Box sx={{ position: 'relative', zIndex: 10, py: 3 }}>
                 <Container maxWidth="lg">
                     <Stack direction="row" alignItems="center" spacing={2}>
-                        <IconButton 
+                        <IconButton
                             onClick={() => navigate('/')}
-                            sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.05)', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}
+                            sx={{ color: 'text.primary', bgcolor: 'action.hover', '&:hover': { bgcolor: 'action.selected' } }}
                         >
                             <ChevronLeft />
                         </IconButton>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.5px' }}>Lightchurch</Typography>
-                            <Box sx={{ bgcolor: '#4285F4', color: 'white', px: 0.8, py: 0.2, borderRadius: 1, fontSize: '0.65rem', fontWeight: 700 }}>PRO</Box>
+                            <Box sx={{ 
+                                bgcolor: theme.palette.mode === 'light' ? 'primary.light' : 'primary.main', 
+                                color: theme.palette.mode === 'light' ? 'primary.main' : 'primary.contrastText', 
+                                px: 0.8, py: 0.2, borderRadius: 1, fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase' 
+                            }}>PRO</Box>
                         </Box>
                     </Stack>
                 </Container>
@@ -109,23 +102,25 @@ const ForPastorsPage: React.FC = () => {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.8 }}
                         >
-                            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1.5, bgcolor: 'rgba(66, 133, 244, 0.1)', borderRadius: 50, px: 2, py: 0.5, mb: 3 }}>
-                                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#4285F4' }} />
-                                <Typography sx={{ color: '#4285F4', fontWeight: 600, fontSize: '0.75rem', letterSpacing: 1 }}>RÉSEAU PASTORAL</Typography>
+                            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1.5, bgcolor: alpha(theme.palette.primary.main, 0.1), borderRadius: 50, px: 2, py: 0.5, mb: 3 }}>
+                                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'primary.main' }} />
+                                <Typography sx={{ color: 'primary.main', fontWeight: 600, fontSize: '0.75rem', letterSpacing: 1 }}>RÉSEAU PASTORAL</Typography>
                             </Box>
-                            
+
                             <Typography variant="h1" sx={{ fontSize: { xs: '2.5rem', md: '4rem' }, fontWeight: 800, lineHeight: 1.1, mb: 3 }}>
                                 Un Réseau National pour <br />
-                                <Box component="span" sx={{ 
-                                    background: 'linear-gradient(90deg, #4285F4 0%, #34A853 100%)',
+                                <Box component="span" sx={{
+                                    background: theme.palette.mode === 'light' 
+                                        ? `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.success.dark} 100%)`
+                                        : `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.success.main} 100%)`,
                                     WebkitBackgroundClip: 'text',
                                     WebkitTextFillColor: 'transparent'
                                 }}>
                                     Connecter les Églises
                                 </Box>
                             </Typography>
-                            
-                            <Typography sx={{ fontSize: '1.2rem', opacity: 0.7, mb: 5, lineHeight: 1.6, maxWidth: 600 }}>
+
+                            <Typography sx={{ fontSize: '1.2rem', color: 'text.secondary', mb: 5, lineHeight: 1.6, maxWidth: 600 }}>
                                 LightChurch crée un pont entre les pasteurs, les responsables et les églises de toute la France pour favoriser l'unité, la collaboration et l'action commune.
                             </Typography>
 
@@ -134,24 +129,19 @@ const ForPastorsPage: React.FC = () => {
                                     variant="contained"
                                     size="large"
                                     onClick={() => navigate('/register')}
-                                    sx={{ bgcolor: '#4285F4', borderRadius: 50, px: 4, py: 2, textTransform: 'none', fontWeight: 600, fontSize: '1.1rem', '&:hover': { bgcolor: '#3367D6' } }}
+                                    sx={{ bgcolor: 'primary.main', borderRadius: 50, px: 4, py: 2, textTransform: 'none', fontWeight: 600, fontSize: '1.1rem', '&:hover': { bgcolor: 'primary.dark' } }}
                                 >
                                     Référencer mon église gratuitement
                                 </Button>
                             </Stack>
                         </MotionBox>
                     </Grid>
-                    
-                    <Grid item xs={12} md={5}>
+                    <Grid item xs={12} md={5} sx={{ display: { xs: 'none', md: 'flex' }, justifyContent: 'center', alignItems: 'center', height: 500, position: 'relative' }}>
                         <MotionBox
-                            initial={{ opacity: 0, scale: 0.9 }}
+                            initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 1, delay: 0.2 }}
-                            sx={{ 
-                                position: 'relative',
-                                width: '100%',
-                                height: { xs: 400, md: 500 }
-                            }}
+                            transition={{ duration: 1, delay: 0.5 }}
+                            sx={{ width: '100%', height: '100%' }}
                         >
                             <InteractiveChurchNetwork />
                         </MotionBox>
@@ -160,7 +150,7 @@ const ForPastorsPage: React.FC = () => {
             </Container>
 
             {/* Features Grid */}
-            <Box sx={{ py: 12, position: 'relative', zIndex: 10, bgcolor: 'rgba(255,255,255,0.02)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+            <Box sx={{ py: 12, position: 'relative', zIndex: 10, bgcolor: 'background.paper', borderTop: '1px solid', borderColor: 'divider' }}>
                 <Container maxWidth="lg">
                     <Typography variant="h2" sx={{ textAlign: 'center', fontWeight: 700, mb: 8, fontSize: { xs: '2rem', md: '2.5rem' } }}>
                         Conçu pour les Responsables
@@ -176,20 +166,22 @@ const ForPastorsPage: React.FC = () => {
                                     sx={{
                                         p: 4,
                                         height: '100%',
-                                        bgcolor: 'rgba(255, 255, 255, 0.03)',
+                                        bgcolor: 'background.paper',
                                         borderRadius: 4,
-                                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        boxShadow: theme.shadows[1],
                                         transition: 'all 0.3s ease',
                                         '&:hover': {
-                                            bgcolor: 'rgba(255, 255, 255, 0.06)',
                                             transform: 'translateY(-5px)',
-                                            borderColor: 'rgba(66, 133, 244, 0.3)'
+                                            borderColor: 'primary.main',
+                                            boxShadow: theme.shadows[3]
                                         }
                                     }}
                                 >
-                                    <Box sx={{ color: '#4285F4', mb: 2 }}>{f.icon}</Box>
+                                    <Box sx={{ color: 'primary.main', mb: 2 }}>{f.icon}</Box>
                                     <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5 }}>{f.title}</Typography>
-                                    <Typography sx={{ opacity: 0.6, fontSize: '0.95rem', lineHeight: 1.6 }}>{f.desc}</Typography>
+                                    <Typography sx={{ color: 'text.secondary', fontSize: '0.95rem', lineHeight: 1.6 }}>{f.desc}</Typography>
                                 </MotionBox>
                             </Grid>
                         ))}
@@ -200,18 +192,19 @@ const ForPastorsPage: React.FC = () => {
             {/* Final CTA */}
             <Box sx={{ py: 12, position: 'relative', zIndex: 10 }}>
                 <Container maxWidth="md">
-                    <Box sx={{ 
+                    <Box sx={{
                         textAlign: 'center',
                         p: { xs: 6, md: 8 },
                         borderRadius: 8,
-                        background: 'linear-gradient(135deg, rgba(66, 133, 244, 0.1) 0%, rgba(52, 168, 83, 0.1) 100%)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        boxShadow: '0 20px 50px rgba(0,0,0,0.3)'
+                        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(theme.palette.success.main, 0.1)} 100%)`,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        boxShadow: theme.shadows[4]
                     }}>
                         <Typography variant="h3" sx={{ fontWeight: 700, mb: 3, fontSize: { xs: '1.8rem', md: '2.5rem' } }}>
                             Prêt à nous rejoindre ?
                         </Typography>
-                        <Typography sx={{ opacity: 0.7, mb: 6, fontSize: '1.1rem', maxWidth: 600, mx: 'auto' }}>
+                        <Typography sx={{ color: 'text.secondary', mb: 6, fontSize: '1.1rem', maxWidth: 600, mx: 'auto' }}>
                             Donnez à votre église la visibilité qu'elle mérite et connectez-vous avec d'autres responsables passionnés par l'unité du corps du Christ.
                         </Typography>
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
@@ -219,7 +212,7 @@ const ForPastorsPage: React.FC = () => {
                                 variant="contained"
                                 size="large"
                                 onClick={() => navigate('/register')}
-                                sx={{ bgcolor: '#4285F4', borderRadius: 50, px: 6, py: 2, fontWeight: 700, fontSize: '1.1rem', textTransform: 'none', '&:hover': { bgcolor: '#3367D6' } }}
+                                sx={{ bgcolor: 'primary.main', borderRadius: 50, px: 6, py: 2, fontWeight: 700, fontSize: '1.1rem', textTransform: 'none', '&:hover': { bgcolor: 'primary.dark' } }}
                             >
                                 Commencer maintenant
                             </Button>
@@ -227,7 +220,7 @@ const ForPastorsPage: React.FC = () => {
                                 variant="outlined"
                                 size="large"
                                 onClick={() => navigate('/login')}
-                                sx={{ borderColor: 'rgba(255,255,255,0.3)', color: 'white', borderRadius: 50, px: 6, py: 2, fontWeight: 600, fontSize: '1.1rem', textTransform: 'none', '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.05)' } }}
+                                sx={{ borderColor: 'divider', color: 'text.primary', borderRadius: 50, px: 6, py: 2, fontWeight: 600, fontSize: '1.1rem', textTransform: 'none', '&:hover': { borderColor: 'text.primary', bgcolor: 'action.hover' } }}
                             >
                                 J'ai déjà un compte
                             </Button>
@@ -237,7 +230,7 @@ const ForPastorsPage: React.FC = () => {
             </Box>
 
             {/* Footer */}
-            <Box sx={{ py: 6, textAlign: 'center', opacity: 0.3, position: 'relative', zIndex: 10 }}>
+            <Box sx={{ py: 6, textAlign: 'center', color: 'text.disabled', position: 'relative', zIndex: 10 }}>
                 <Typography variant="body2">© 2026 Lightchurch Network • France</Typography>
             </Box>
         </Box>

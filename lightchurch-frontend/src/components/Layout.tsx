@@ -33,6 +33,7 @@ import {
   Map as MapIcon,
   AccountCircle,
 } from '@mui/icons-material';
+import ThemeToggle from './common/ThemeToggle';
 
 const drawerWidth = 260;
 
@@ -158,38 +159,43 @@ export default function DashboardLayout() {
 
   const drawer = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Logo */}
+      {/* Logo and Theme Toggle */}
       <Box
         sx={{
-          p: 3,
+          p: 2,
+          pl: 3,
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'space-between',
           borderBottom: 1,
           borderColor: 'divider',
         }}
       >
-        <ChurchIcon
-          sx={{
-            fontSize: 32,
-            background: 'linear-gradient(135deg, #2563EB 0%, #8B5CF6 100%)',
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            mr: 1.5,
-          }}
-        />
-        <Typography
-          variant="h6"
-          sx={{
-            fontWeight: 700,
-            background: 'linear-gradient(135deg, #60A5FA 0%, #A78BFA 100%)',
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          Light Church
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <ChurchIcon
+            sx={{
+              fontSize: 32,
+              background: 'linear-gradient(135deg, #2563EB 0%, #8B5CF6 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              mr: 1.5,
+            }}
+          />
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 700,
+              background: 'linear-gradient(135deg, #60A5FA 0%, #A78BFA 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            Light Church
+          </Typography>
+        </Box>
+        <ThemeToggle />
       </Box>
 
       {/* Navigation */}

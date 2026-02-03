@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useTheme, alpha } from '@mui/material';
 import { motion, useSpring, useTransform } from 'framer-motion';
 
 interface LiveStatCounterProps {
@@ -10,6 +10,7 @@ interface LiveStatCounterProps {
 }
 
 const LiveStatCounter: React.FC<LiveStatCounterProps> = ({ value, label, delay = 0, withIncrement = false }) => {
+    const theme = useTheme();
     // Current display value state (for the increment effect)
     const [targetValue, setTargetValue] = useState(value);
 
@@ -56,8 +57,9 @@ const LiveStatCounter: React.FC<LiveStatCounterProps> = ({ value, label, delay =
                     display: 'flex', 
                     alignItems: 'center', 
                     gap: 0.5, 
-                    bgcolor: 'rgba(234, 67, 53, 0.1)', 
-                    border: '1px solid rgba(234, 67, 53, 0.3)',
+                    bgcolor: alpha(theme.palette.error.main, 0.1), 
+                    border: '1px solid',
+                    borderColor: alpha(theme.palette.error.main, 0.3),
                     borderRadius: 1, 
                     px: 0.8, 
                     py: 0.2, 
@@ -72,14 +74,14 @@ const LiveStatCounter: React.FC<LiveStatCounterProps> = ({ value, label, delay =
                             width: 6, 
                             height: 6, 
                             borderRadius: '50%', 
-                            bgcolor: '#EA4335',
-                            boxShadow: '0 0 5px #EA4335' 
+                            bgcolor: 'error.main',
+                            boxShadow: `0 0 5px ${theme.palette.error.main}` 
                         }}
                     />
                     <Typography sx={{ 
                         fontSize: '0.6rem', 
                         fontWeight: 700, 
-                        color: '#EA4335', 
+                        color: 'error.main', 
                         letterSpacing: 0.5,
                         lineHeight: 1
                     }}>
