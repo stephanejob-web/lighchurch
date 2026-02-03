@@ -44,10 +44,10 @@ interface NominatimResponse {
     };
 }
 
-// API 1 : data.gouv.fr (France uniquement, rapide)
+// API 1 : data.gouv.fr via proxy backend (évite CORS)
 const geocodeWithDataGouv = async (address: string): Promise<{ latitude: number; longitude: number } | null> => {
     try {
-        const response = await axios.get<GeoApiResponse>(`https://api-adresse.data.gouv.fr/search/`, {
+        const response = await axios.get<GeoApiResponse>(`/api/geo/search`, {
             params: {
                 q: address,
                 limit: 1,
@@ -102,7 +102,7 @@ export const searchCities = async (query: string): Promise<CitySuggestion[]> => 
     if (!query || query.length < 3) return [];
 
     try {
-        const response = await axios.get<GeoApiResponse>(`https://api-adresse.data.gouv.fr/search/`, {
+        const response = await axios.get<GeoApiResponse>(`/api/geo/search`, {
             params: {
                 q: query,
                 type: 'municipality', // Limit to cities

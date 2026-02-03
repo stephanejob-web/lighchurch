@@ -81,9 +81,9 @@ export default function AddressAutocomplete({
         const timeoutId = setTimeout(async () => {
             setIsLoading(true);
             try {
-                // Tentative 1 : API française (data.gouv.fr)
+                // Tentative 1 : API française via proxy backend
                 let response = await fetch(
-                    `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=5`,
+                    `/api/geo/search?q=${encodeURIComponent(query)}&limit=5`,
                     { signal: AbortSignal.timeout(5000) }
                 );
 
