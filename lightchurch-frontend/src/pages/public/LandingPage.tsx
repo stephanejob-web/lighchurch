@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Button, Container, Stack, IconButton, Drawer, Divider, Grid, useTheme, alpha } from '@mui/material';
-import { Menu as MenuIcon, X as CloseIcon, CheckCircle2, XCircle, ArrowRight, Map, LogIn } from 'lucide-react';
+import { Menu as MenuIcon, X as CloseIcon, CheckCircle2, XCircle, ArrowRight, Map, LogIn, Search, Navigation } from 'lucide-react';
 import { motion } from 'framer-motion';
 import LiveStatCounter from '../../components/common/LiveStatCounter';
 import ThemeToggle from '../../components/common/ThemeToggle';
@@ -59,7 +59,14 @@ const LandingPage: React.FC = () => {
     ];
 
     return (
-        <Box sx={{ bgcolor: 'background.default', color: 'text.primary', minHeight: '100vh', overflowX: 'hidden' }}>
+        <Box sx={{ 
+            bgcolor: 'background.default', color: 'text.primary', minHeight: '100vh', overflowX: 'hidden',
+            '@keyframes pulse': {
+                '0%': { opacity: 1, scale: 1, boxShadow: '0 0 0 0 rgba(234, 67, 53, 0.4)' },
+                '70%': { opacity: 0.7, scale: 1.1, boxShadow: '0 0 0 10px rgba(234, 67, 53, 0)' },
+                '100%': { opacity: 1, scale: 1, boxShadow: '0 0 0 0 rgba(234, 67, 53, 0)' }
+            }
+        }}>
             {/* Header */}
             <Box
                 sx={{
@@ -121,39 +128,151 @@ const LandingPage: React.FC = () => {
             </Box>
 
             {/* Hero Section */}
-            <Box sx={{ position: 'relative', pt: { xs: 18, md: 24 }, pb: { xs: 12, md: 20 }, minHeight: '100vh', overflow: 'hidden' }}>
+            <Box sx={{ position: 'relative', pt: { xs: 18, md: 24 }, pb: { xs: 12, md: 20 }, minHeight: '90vh', overflow: 'hidden' }}>
                 <ParticleBackground />
                 <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
-                    <Grid container spacing={4} alignItems="center">
-                        <Grid item xs={12} md={7}>
-                            <MotionBox initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-                                <Typography variant="h1" sx={{ fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4.5rem' }, fontWeight: 700, lineHeight: 1.1, mb: 3, letterSpacing: '-1px' }}>
-                                    Trouvez une église <Box component="span" sx={{ color: 'primary.main' }}>près de chez vous</Box>
+                    <Box sx={{ textAlign: 'center', mb: 8 }}>
+                        <MotionBox initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+                            <Typography variant="h1" sx={{ fontSize: { xs: '2.5rem', sm: '3.5rem', md: '5rem' }, fontWeight: 800, lineHeight: 1, mb: 3, letterSpacing: '-2px' }}>
+                                L'information chrétienne <br />
+                                <Box component="span" sx={{ 
+                                    background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`,
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent'
+                                }}>enfin centralisée.</Box>
+                            </Typography>
+                            <Typography sx={{ fontSize: { xs: '1rem', md: '1.25rem' }, color: 'text.secondary', mb: 6, maxWidth: 700, mx: 'auto', lineHeight: 1.7 }}>
+                                Découvrez les églises et événements autour de vous sur une plateforme unique, moderne et ultra-rapide. Plus de données éparpillées, tout est ici.
+                            </Typography>
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center" sx={{ mb: 10 }}>
+                                <Button variant="contained" size="large" onClick={() => navigate('/map')} startIcon={<Map size={20} />} sx={{ bgcolor: 'primary.main', borderRadius: 50, py: 2, px: 5, fontSize: '1.1rem', textTransform: 'none', fontWeight: 600, boxShadow: `0 8px 25px ${alpha(theme.palette.primary.main, 0.4)}`, '&:hover': { bgcolor: 'primary.dark' } }}>
+                                    Lancer l'expérience
+                                </Button>
+                                <Button variant="outlined" size="large" onClick={() => document.getElementById('live-discovery')?.scrollIntoView({ behavior: 'smooth' })} endIcon={<ArrowRight size={20} />} sx={{ borderColor: 'divider', color: 'text.primary', borderRadius: 50, py: 2, px: 5, fontSize: '1.1rem', textTransform: 'none', fontWeight: 600, '&:hover': { borderColor: 'text.primary', bgcolor: 'action.hover' } }}>
+                                    Découvrir la carte
+                                </Button>
+                            </Stack>
+                            <Box sx={{ display: 'flex', justifyContent: 'center', gap: { xs: 4, md: 10 } }}>
+                                <LiveStatCounter value={stats.churches || 10000} label="Églises indexées" delay={0.2} />
+                                <LiveStatCounter value={stats.events || 39878} label="Événements actifs" delay={0.4} />
+                            </Box>
+                        </MotionBox>
+                    </Box>
+                </Container>
+            </Box>
+
+            {/* LIVE DISCOVERY Section */}
+            <Box id="live-discovery" sx={{ py: { xs: 12, md: 20 }, bgcolor: 'background.paper', position: 'relative', overflow: 'hidden' }}>
+                <Container maxWidth="lg">
+                    <Grid container spacing={8} alignItems="center">
+                        <Grid item xs={12} md={5}>
+                            <MotionBox
+                                initial={{ opacity: 0, x: -50 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.8 }}
+                            >
+                                <Box sx={{ 
+                                    display: 'inline-flex', 
+                                    alignItems: 'center', 
+                                    gap: 1, 
+                                    bgcolor: alpha(theme.palette.error.main, 0.1), 
+                                    color: 'error.main', 
+                                    px: 2, 
+                                    py: 0.5, 
+                                    borderRadius: 50, 
+                                    mb: 3 
+                                }}>
+                                    <Box sx={{ width: 8, height: 8, bgcolor: 'error.main', borderRadius: '50%', animation: 'pulse 2s infinite' }} />
+                                    <Typography variant="caption" sx={{ fontWeight: 800, letterSpacing: 1 }}>LIVE DISCOVERY</Typography>
+                                </Box>
+                                <Typography variant="h2" sx={{ fontWeight: 800, mb: 3, fontSize: { xs: '2.2rem', md: '3.2rem' }, lineHeight: 1.1 }}>
+                                    Explorez ce qui se passe <br />
+                                    <Box component="span" sx={{ color: 'primary.main' }}>autour de vous.</Box>
                                 </Typography>
-                                <Typography sx={{ fontSize: { xs: '1rem', md: '1.15rem' }, color: 'text.secondary', mb: 5, maxWidth: 550, lineHeight: 1.7 }}>
-                                    L'information sur les églises est <Box component="span" sx={{ color: 'error.main' }}>dispersée</Box>, les horaires <Box component="span" sx={{ color: 'error.main' }}>rarement à jour</Box>. LightChurch centralise tout sur une carte interactive pour vous aider à trouver une communauté.
+                                <Typography sx={{ color: 'text.secondary', fontSize: '1.1rem', mb: 5, lineHeight: 1.8 }}>
+                                    Une carte interactive ultra-rapide pour découvrir les églises dynamiques et les événements chrétiens dans votre ville. Posez vos repères en un clic.
                                 </Typography>
-                                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 8 }}>
-                                    <Button variant="contained" size="large" onClick={() => navigate('/map')} startIcon={<Map size={20} />} sx={{ bgcolor: 'primary.main', borderRadius: 50, py: 1.5, px: 4, fontSize: '1rem', textTransform: 'none', fontWeight: 500, '&:hover': { bgcolor: 'primary.dark' } }}>
-                                        Lancer l'expérience
-                                    </Button>
-                                    <Button variant="outlined" size="large" onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} endIcon={<ArrowRight size={20} />} sx={{ borderColor: 'divider', color: 'text.primary', borderRadius: 50, py: 1.5, px: 4, fontSize: '1rem', textTransform: 'none', fontWeight: 500, '&:hover': { borderColor: 'text.primary', bgcolor: 'action.hover' } }}>
-                                        Découvrir les fonctionnalités
-                                    </Button>
+
+                                <Stack spacing={4}>
+                                    <Box sx={{ display: 'flex', gap: 2.5 }}>
+                                        <Box sx={{ mt: 0.5, p: 1.5, borderRadius: 2, bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main' }}>
+                                            <Search size={24} />
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>Filtrage précis</Typography>
+                                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>Trouvez exactement ce que vous cherchez par types d'événements, dénominations ou services.</Typography>
+                                        </Box>
+                                    </Box>
+
+                                    <Box sx={{ display: 'flex', gap: 2.5 }}>
+                                        <Box sx={{ mt: 0.5, p: 1.5, borderRadius: 2, bgcolor: alpha(theme.palette.success.main, 0.1), color: 'success.main' }}>
+                                            <Navigation size={24} />
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>Itinéraires et horaires</Typography>
+                                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>Accédez aux horaires en temps réel et lancez votre GPS directement depuis la plateforme.</Typography>
+                                        </Box>
+                                    </Box>
                                 </Stack>
-                                <Stack direction="row" spacing={8}>
-                                    <LiveStatCounter value={stats.churches || 10000} label="Églises indexées" delay={0.2} />
-                                    <LiveStatCounter value={stats.events || 39878} label="Événements actifs" delay={0.4} />
-                                </Stack>
+
+                                <Button 
+                                    variant="contained" 
+                                    size="large" 
+                                    onClick={() => navigate('/map')}
+                                    sx={{ 
+                                        mt: 6, 
+                                        bgcolor: 'text.primary', 
+                                        color: 'background.paper', 
+                                        borderRadius: 50, 
+                                        py: 2, 
+                                        px: 5, 
+                                        fontWeight: 700, 
+                                        textTransform: 'none', 
+                                        '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.8) } 
+                                    }}
+                                >
+                                    Ouvrir la carte interactive
+                                </Button>
                             </MotionBox>
                         </Grid>
-                        <Grid item xs={12} md={5} sx={{ display: { xs: 'none', md: 'block' } }}>
+                        <Grid item xs={12} md={7}>
                             <MotionBox
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ duration: 1, delay: 0.5 }}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                whileInView={{ opacity: 1, scale: 1 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 1 }}
+                                sx={{ position: 'relative' }}
                             >
-                                <AnimatedDiscoveryMap />
+                                <Box sx={{ 
+                                    position: 'relative', 
+                                    borderRadius: 8, 
+                                    overflow: 'hidden', 
+                                    boxShadow: `0 40px 100px ${alpha(theme.palette.common.black, 0.2)}`,
+                                    border: '10px solid', 
+                                    borderColor: alpha(theme.palette.divider, 0.5)
+                                }}>
+                                    <AnimatedDiscoveryMap />
+                                </Box>
+                                {/* Decorative elements */}
+                                <Box sx={{ 
+                                    position: 'absolute', 
+                                    top: '-40px', 
+                                    right: '-40px', 
+                                    width: '200px', 
+                                    height: '200px', 
+                                    background: `radial-gradient(circle, ${alpha(theme.palette.primary.main, 0.15)} 0%, transparent 70%)`, 
+                                    zIndex: -1 
+                                }} />
+                                <Box sx={{ 
+                                    position: 'absolute', 
+                                    bottom: '-40px', 
+                                    left: '-40px', 
+                                    width: '200px', 
+                                    height: '200px', 
+                                    background: `radial-gradient(circle, ${alpha(theme.palette.error.main, 0.1)} 0%, transparent 70%)`, 
+                                    zIndex: -1 
+                                }} />
                             </MotionBox>
                         </Grid>
                     </Grid>

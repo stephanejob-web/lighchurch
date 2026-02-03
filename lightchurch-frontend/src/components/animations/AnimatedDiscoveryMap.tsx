@@ -7,6 +7,8 @@ const MotionBox = motion(Box);
 
 const AnimatedDiscoveryMap: React.FC = () => {
     const theme = useTheme();
+    const targetX = 60;
+    const targetY = 45;
 
     return (
         <Box sx={{ 
@@ -42,10 +44,33 @@ const AnimatedDiscoveryMap: React.FC = () => {
             </Box>
 
             {/* 5. Simulated Cursor Interaction */}
-            <SimulatedCursor targetX={60} targetY={45} />
+            {/* 6. Route Line Animation */}
+            <svg width="100%" height="100%" style={{ position: 'absolute', top: 0, left: 0, zIndex: 15, pointerEvents: 'none' }}>
+                <MotionPath
+                    d={`M ${0.1 * 1000} ${0.9 * 500} Q ${300} ${400} ${targetX / 100 * 1000} ${targetY / 100 * 500}`}
+                    fill="none"
+                    stroke={theme.palette.primary.main}
+                    strokeWidth="3"
+                    strokeDasharray="10 10"
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{ 
+                        pathLength: [0, 1, 1, 0],
+                        opacity: [0, 1, 1, 0]
+                    }}
+                    transition={{ 
+                        duration: 6, 
+                        times: [0, 0.4, 0.8, 1],
+                        repeat: Infinity,
+                        repeatDelay: 2
+                    }}
+                />
+            </svg>
+            <SimulatedCursor targetX={targetX} targetY={targetY} />
         </Box>
     );
 };
+
+const MotionPath = motion.path;
 
 // ---------------- Sub Components ----------------
 
