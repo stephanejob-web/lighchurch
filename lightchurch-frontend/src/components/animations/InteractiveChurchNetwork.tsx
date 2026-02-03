@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
-import { Church, UserRound, Zap } from 'lucide-react';
+import { Church, Zap } from 'lucide-react';
 
 const MotionBox = motion(Box);
 
@@ -42,9 +42,9 @@ const InteractiveChurchNetwork: React.FC = () => {
                 }}
             >
                 {/* 3 Satellite Arms */}
-                <NetworkArm angle={0} churchName="Paris" delay={0} />
-                <NetworkArm angle={120} churchName="Lyon" delay={2} />
-                <NetworkArm angle={240} churchName="Toulon" delay={4} />
+                <NetworkArm angle={0} churchName="ADD Paris" delay={0} />
+                <NetworkArm angle={120} churchName="ADD Lyon" delay={2} />
+                <NetworkArm angle={240} churchName="ADD Toulon" delay={4} />
             </MotionBox>
 
             {/* Central Hub (Static on top of rotation) */}
@@ -113,7 +113,6 @@ interface NetworkArmProps {
 
 const NetworkArm: React.FC<NetworkArmProps> = ({ angle, churchName, delay }) => {
     const radius = 180; // Distance from center to Church
-    const userDistance = 100; // Distance from Church to Users
 
     return (
         <Box
@@ -144,12 +143,6 @@ const NetworkArm: React.FC<NetworkArmProps> = ({ angle, churchName, delay }) => 
                 <CounterRotator>
                     <ChurchNode name={churchName} />
                 </CounterRotator>
-
-                {/* Users Cluster connected to this Church */}
-                {/* Visual Lines from Church to Users */}
-                 <UserBranch angle={-45} distance={userDistance} delay={delay + 1} />
-                 <UserBranch angle={0} distance={userDistance * 1.2} delay={delay + 1.5} />
-                 <UserBranch angle={45} distance={userDistance} delay={delay + 2} />
             </Box>
         </Box>
     );
@@ -188,69 +181,6 @@ const ChurchNode = ({ name }: { name: string }) => (
         </Typography>
     </Box>
 );
-
-const UserBranch = ({ angle, distance, delay }: { angle: number, distance: number, delay: number }) => {
-    return (
-        <Box sx={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: distance,
-            height: 1,
-            transform: `rotate(${angle}deg)`,
-            transformOrigin: 'center left',
-            zIndex: -1
-        }}>
-            {/* Line */}
-            <Box sx={{ 
-                width: '100%', 
-                height: '100%', 
-                bgcolor: 'rgba(255, 255, 255, 0.1)' 
-            }} />
-            
-            {/* Particle Church -> User */}
-            <MotionBox
-                animate={{ x: [0, distance], opacity: [0, 1, 0] }}
-                transition={{ duration: 2, repeat: Infinity, delay, ease: "linear" }}
-                sx={{
-                    position: 'absolute',
-                    top: -2,
-                    left: 0,
-                    width: 4,
-                    height: 4,
-                    borderRadius: '50%',
-                    bgcolor: '#4285F4',
-                    boxShadow: '0 0 5px #4285F4'
-                }}
-            />
-
-            {/* User Node at end */}
-            <Box sx={{ position: 'absolute', right: 0, transform: 'translate(50%, -50%) rotate(90deg)' }}> 
-                {/* Note: UserWrapper is rotated by parent branch angle, need to counter that too? 
-                    Actually, we are deeply nested.
-                    Main Rotate -> Arm Rotate (Static=0) -> Church (CounterMain) -> UserBranch (Angle) -> User
-                    To keep User upright, we need to counter: Main + BranchAngle.
-                */}
-                <CounterRotator offsetAngle={angle}>
-                    <Box sx={{ 
-                        width: 36, 
-                        height: 36, 
-                        bgcolor: '#1a1d24', 
-                        borderRadius: '50%', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center',
-                        border: '1px solid rgba(66, 133, 244, 0.4)',
-                        boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
-                    }}>
-                        <UserRound size={16} color="white" />
-                    </Box>
-                </CounterRotator>
-            </Box>
-        </Box>
-    )
-}
-
 
 // Helper to keep content upright while parent rotates
 const CounterRotator = ({ children, offsetAngle = 0 }: { children: React.ReactNode, offsetAngle?: number }) => {
