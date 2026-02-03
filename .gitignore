@@ -34,3 +34,6 @@ backup*.sql
 
 # Docker volumes
 mysql-data/
+
+# Docker local override
+docker-compose.override.yml
