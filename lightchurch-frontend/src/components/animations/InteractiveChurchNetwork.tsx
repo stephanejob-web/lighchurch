@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
-import { Church, Zap } from 'lucide-react';
+import { Church, UserRound, Zap } from 'lucide-react';
 
 const MotionBox = motion(Box);
 
@@ -26,11 +26,29 @@ const InteractiveChurchNetwork: React.FC = () => {
                 pointerEvents: 'none'
             }} />
 
-            {/* Rotating Network Container */}
-            {/* The whole satellite system rotates around the center */}
+            {/* Rotating Network Container - Churches (Inner Orbit) */}
             <MotionBox
                 animate={{ rotate: 360 }}
-                transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+                transition={{ duration: 80, repeat: Infinity, ease: "linear" }}
+                sx={{
+                    position: 'absolute',
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 2
+                }}
+            >
+                <ChurchArm angle={0} churchName="Paris" delay={0} />
+                <ChurchArm angle={120} churchName="Lyon" delay={2} />
+                <ChurchArm angle={240} churchName="Toulon" delay={4} />
+            </MotionBox>
+
+            {/* Rotating Network Container - Users (Outer Orbit) */}
+            <MotionBox
+                animate={{ rotate: -360 }} // Counter-rotate relative to churches for dynamic effect
+                transition={{ duration: 100, repeat: Infinity, ease: "linear" }}
                 sx={{
                     position: 'absolute',
                     width: '100%',
@@ -41,10 +59,10 @@ const InteractiveChurchNetwork: React.FC = () => {
                     zIndex: 1
                 }}
             >
-                {/* 3 Satellite Arms */}
-                <NetworkArm angle={0} churchName="ADD Paris" delay={0} />
-                <NetworkArm angle={120} churchName="ADD Lyon" delay={2} />
-                <NetworkArm angle={240} churchName="ADD Toulon" delay={4} />
+                {/* Distributed Users */}
+                {[0, 60, 120, 180, 240, 300].map((angle, i) => (
+                    <UserArm key={i} angle={angle} delay={i * 1.5} />
+                ))}
             </MotionBox>
 
             {/* Central Hub (Static on top of rotation) */}
@@ -105,14 +123,14 @@ const CentralHub = () => {
     );
 };
 
-interface NetworkArmProps {
+interface ChurchArmProps {
     angle: number;
     churchName: string;
     delay: number;
 }
 
-const NetworkArm: React.FC<NetworkArmProps> = ({ angle, churchName, delay }) => {
-    const radius = 180; // Distance from center to Church
+const ChurchArm: React.FC<ChurchArmProps> = ({ angle, churchName, delay }) => {
+    const radius = 160; // Inner orbit
 
     return (
         <Box
@@ -131,17 +149,54 @@ const NetworkArm: React.FC<NetworkArmProps> = ({ angle, churchName, delay }) => 
                 left: 0,
                 width: radius,
                 height: 2,
-                background: 'linear-gradient(90deg, transparent 0%, rgba(66, 133, 244, 0.2) 20%, rgba(66, 133, 244, 0.2) 100%)',
+                background: 'linear-gradient(90deg, transparent 0%, rgba(66, 133, 244, 0.2) 20%, rgba(66, 133, 244, 0.4) 100%)',
                 transformOrigin: 'left center'
             }} />
 
-            {/* Data Particle: Center -> Church */}
-            <DataParticle pathWidth={radius} delay={delay} />
+            {/* Data Particle: Church -> Center (INWARD) */}
+            <DataParticle pathWidth={radius} delay={delay} direction="in" />
 
             {/* Church Node */}
             <Box sx={{ position: 'absolute', left: radius, transform: 'translate(-50%, -50%)' }}>
                 <CounterRotator>
                     <ChurchNode name={churchName} />
+                </CounterRotator>
+            </Box>
+        </Box>
+    );
+};
+
+const UserArm: React.FC<{ angle: number, delay: number }> = ({ angle, delay }) => {
+    const radius = 240; // Outer orbit
+
+    return (
+        <Box
+            sx={{
+                position: 'absolute',
+                width: 0,
+                height: 0,
+                transform: `rotate(${angle}deg)`,
+                display: 'flex',
+                alignItems: 'center',
+            }}
+        >
+            {/* Connection Line: Center -> User */}
+            <Box sx={{
+                position: 'absolute',
+                left: 0,
+                width: radius,
+                height: 1,
+                background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.1) 100%)',
+                transformOrigin: 'left center'
+            }} />
+
+            {/* Data Particle: Center -> User (OUTWARD) */}
+            <DataParticle pathWidth={radius} delay={delay} direction="out" color="#34A853" />
+
+            {/* User Node */}
+            <Box sx={{ position: 'absolute', left: radius, transform: 'translate(-50%, -50%)' }}>
+                <CounterRotator reverseDirection>
+                    <UserNode />
                 </CounterRotator>
             </Box>
         </Box>
@@ -182,28 +237,57 @@ const ChurchNode = ({ name }: { name: string }) => (
     </Box>
 );
 
+const UserNode = () => (
+    <Box sx={{ 
+        width: 40, 
+        height: 40, 
+        bgcolor: '#1a1d24', 
+        borderRadius: '50%', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        border: '1px solid rgba(66, 133, 244, 0.4)',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+        position: 'relative'
+    }}>
+        <UserRound size={18} color="white" />
+        {/* Active Dot */}
+        <Box sx={{ position: 'absolute', top: 0, right: 0, width: 8, height: 8, bgcolor: '#34A853', borderRadius: '50%', border: '2px solid #1a1d24' }} />
+    </Box>
+);
+
 // Helper to keep content upright while parent rotates
-const CounterRotator = ({ children, offsetAngle = 0 }: { children: React.ReactNode, offsetAngle?: number }) => {
+const CounterRotator = ({ children, offsetAngle = 0, reverseDirection = false }: { children: React.ReactNode, offsetAngle?: number, reverseDirection?: boolean }) => {
+    // If parent rotates 360, we rotate -360. If parent rotates -360, we rotate 360.
+    const rotateTo = reverseDirection ? 360 : -360;
+
     return (
         <MotionBox
-            animate={{ rotate: -360 }}
-            transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-            style={{ rotate: -offsetAngle }} // Static offset adjustment
+            animate={{ rotate: rotateTo }}
+            transition={{ duration: reverseDirection ? 100 : 80, repeat: Infinity, ease: "linear" }}
+            style={{ rotate: -offsetAngle }} 
         >
             {children}
         </MotionBox>
     );
 };
 
-const DataParticle = ({ pathWidth, delay }: { pathWidth: number, delay: number }) => {
+const DataParticle = ({ pathWidth, delay, direction = "out", color = "#4285F4" }: { pathWidth: number, delay: number, direction?: "in" | "out", color?: string }) => {
+    // Direction out: 0 -> pathWidth
+    // Direction in: pathWidth -> 0
+    
+    const sequence = direction === "out" 
+        ? [0, pathWidth]
+        : [pathWidth, 0];
+
     return (
         <MotionBox
             animate={{ 
-                x: [0, pathWidth],
+                x: sequence,
                 opacity: [0, 1, 1, 0]
             }}
             transition={{ 
-                duration: 2, 
+                duration: 2.5, 
                 repeat: Infinity, 
                 delay: delay,
                 ease: "linear",
@@ -216,8 +300,9 @@ const DataParticle = ({ pathWidth, delay }: { pathWidth: number, delay: number }
                 width: 20,
                 height: 6,
                 borderRadius: 4,
-                background: 'linear-gradient(90deg, transparent, #4285F4)',
-                filter: 'drop-shadow(0 0 4px #4285F4)'
+                background: `linear-gradient(90deg, transparent, ${color})`,
+                filter: `drop-shadow(0 0 4px ${color})`,
+                transform: direction === "in" ? 'rotate(180deg)' : 'none' // Flip visual tail for inward inputs
             }}
         />
     );
