@@ -52,12 +52,33 @@ services:
     restart: unless-stopped
     environment:
       BACKEND_PORT: ${EXPRESS_PORT:-3000}
-    ports:
-      - "${FRONTEND_PORT:-3080}:80"
     depends_on:
       - backend
     networks:
       - lightchurch-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: lightchurch-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    depends_on:
+      - frontend
+    networks:
+      - lightchurch-network
+
+  certbot:
+    image: certbot/certbot
+    container_name: lightchurch-certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
 
 networks:
   lightchurch-network:
