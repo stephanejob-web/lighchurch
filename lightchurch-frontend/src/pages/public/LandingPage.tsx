@@ -5,6 +5,7 @@ import { Menu as MenuIcon, X as CloseIcon, CheckCircle2, XCircle, ArrowRight, Ma
 import { motion } from 'framer-motion';
 import ParticleBackground from '../../components/landing/ParticleBackground';
 import InteractiveChurchNetwork from '../../components/animations/InteractiveChurchNetwork';
+import AnimatedDiscoveryMap from '../../components/animations/AnimatedDiscoveryMap';
 
 const MotionBox = motion(Box);
 
@@ -128,6 +129,38 @@ const LandingPage: React.FC = () => {
                 </Container>
             </Box>
             <Box sx={{ py: { xs: 10, md: 16 }, position: 'relative' }}><ParticleBackground /><Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}><Box sx={{ textAlign: 'center', mb: 8 }}><Typography sx={{ color: '#EA4335', fontWeight: 600, letterSpacing: 2, mb: 2, fontSize: '0.85rem' }}>LE CONSTAT</Typography><Typography variant="h2" sx={{ fontWeight: 700, mb: 2, fontSize: { xs: '1.75rem', md: '2.5rem' } }}>Trouver une église ne devrait pas être si compliqué.</Typography><Typography sx={{ opacity: 0.5, maxWidth: 600, mx: 'auto' }}>Vous déménagez, vous voyagez, ou vous cherchez simplement une communauté ? Aujourd'hui, c'est un parcours du combattant.</Typography></Box><Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, justifyContent: 'center' }}>{constraints.map((item, i) => (<Box key={i} sx={{ width: { xs: '100%', md: 'calc(33.333% - 16px)' }, maxWidth: 380 }}><Box sx={{ p: 5, height: '100%', bgcolor: 'rgba(255, 255, 255, 0.03)', borderRadius: 4, border: '1px solid rgba(255, 255, 255, 0.08)', textAlign: 'center', transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-5px)', borderColor: 'rgba(234, 67, 53, 0.3)' } }}><Typography sx={{ fontSize: '3rem', mb: 3 }}>{item.emoji}</Typography><Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#EA4335' }}>{item.title}</Typography><Typography sx={{ opacity: 0.5, fontSize: '0.95rem' }}>{item.desc}</Typography></Box></Box>))}</Box></Container></Box>
+            <Box sx={{ py: { xs: 10, md: 16 }, position: 'relative', bgcolor: 'rgba(255, 255, 255, 0.02)' }}>
+                <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
+                    <Grid container spacing={8} alignItems="center">
+                        <Grid item xs={12} md={5}>
+                             <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1.5, bgcolor: 'rgba(52, 168, 83, 0.1)', borderRadius: 50, px: 2, py: 0.5, mb: 3 }}>
+                                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#34A853' }} />
+                                <Typography sx={{ color: '#34A853', fontWeight: 600, fontSize: '0.75rem', letterSpacing: 1 }}>LIVE DISCOVERY</Typography>
+                            </Box>
+                            <Typography variant="h2" sx={{ fontWeight: 700, mb: 3, fontSize: { xs: '1.75rem', md: '2.5rem' } }}>
+                                Explorez ce qui se passe <Box component="span" sx={{ color: '#34A853' }}>autour de vous.</Box>
+                            </Typography>
+                            <Typography sx={{ opacity: 0.7, mb: 4, lineHeight: 1.7, fontSize: '1.1rem' }}>
+                                Une carte interactive ultra-rapide pour découvrir les églises dynamiques et les événements chrétiens dans votre ville.
+                            </Typography>
+                            <Stack spacing={2}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <Box sx={{ p: 1, borderRadius: '50%', bgcolor: 'rgba(66, 133, 244, 0.1)' }}><CheckCircle2 size={20} color="#4285F4" /></Box>
+                                    <Typography sx={{ fontWeight: 500 }}>Filtrage précis par types d'événements</Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <Box sx={{ p: 1, borderRadius: '50%', bgcolor: 'rgba(66, 133, 244, 0.1)' }}><CheckCircle2 size={20} color="#4285F4" /></Box>
+                                    <Typography sx={{ fontWeight: 500 }}>Itinéraires et horaires en temps réel</Typography>
+                                </Box>
+                            </Stack>
+                        </Grid>
+                        <Grid item xs={12} md={7}>
+                            <AnimatedDiscoveryMap />
+                        </Grid>
+                    </Grid>
+                </Container>
+            </Box>
+
             <Box id="features" sx={{ py: { xs: 10, md: 16 }, position: 'relative' }}><ParticleBackground /><Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}><Box sx={{ textAlign: 'center', mb: 8 }}><Typography sx={{ color: '#34A853', fontWeight: 600, letterSpacing: 2, mb: 2, fontSize: '0.85rem' }}>LA SOLUTION</Typography><Typography variant="h2" sx={{ fontWeight: 700, mb: 2, fontSize: { xs: '1.75rem', md: '2.5rem' } }}>LightChurch change la donne.</Typography><Typography sx={{ opacity: 0.5, maxWidth: 700, mx: 'auto' }}>Une plateforme unique où les églises mettent à jour leurs informations, et où vous trouvez tout ce dont vous avez besoin en quelques secondes.</Typography></Box><Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, justifyContent: 'center' }}>{solutions.map((item, i) => (<Box key={i} sx={{ width: { xs: '100%', sm: 'calc(50% - 12px)', lg: 'calc(25% - 18px)' }, maxWidth: 300 }}><Box sx={{ p: 4, height: '100%', bgcolor: 'rgba(255, 255, 255, 0.02)', borderRadius: 4, border: '1px solid rgba(255, 255, 255, 0.05)', transition: 'all 0.3s ease', '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.05)', transform: 'translateY(-5px)' } }}><Box sx={{ width: 56, height: 56, borderRadius: 3, bgcolor: item.bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 3, fontSize: '1.5rem' }}>{item.emoji}</Box><Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5 }}>{item.title}</Typography><Typography sx={{ opacity: 0.5, fontSize: '0.9rem', lineHeight: 1.6 }}>{item.desc}</Typography></Box></Box>))}</Box></Container></Box>
             <Box sx={{ py: { xs: 10, md: 16 }, bgcolor: 'rgba(255, 255, 255, 0.02)', position: 'relative' }}><ParticleBackground /><Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}><Box sx={{ textAlign: 'center', mb: 10 }}><Typography sx={{ color: '#4285F4', fontWeight: 600, letterSpacing: 2, mb: 2, fontSize: '0.85rem' }}>POURQUOI NOUS ?</Typography><Typography variant="h2" sx={{ fontWeight: 700, mb: 2, fontSize: { xs: '1.75rem', md: '2.5rem' } }}>Une nouvelle ère pour la visibilité chrétienne.</Typography><Typography sx={{ opacity: 0.5, maxWidth: 600, mx: 'auto' }}>Découvrez pourquoi LightChurch est la plateforme la plus avancée pour connecter les églises et leurs communautés.</Typography></Box>
             
