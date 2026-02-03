@@ -44,6 +44,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Utilisation des routes
 // Routes publiques (sans authentification)
 app.use('/api/public', publicMapRoutes);
+app.use('/api/geo', require('./routes/geoRoutes'));
 
 // Routes authentifiées
 app.use('/api/auth', authRoutes);

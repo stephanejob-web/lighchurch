@@ -67,7 +67,7 @@ const SearchBar: React.FC<SearchBarProps> = React.memo(({
             setIsLoading(true);
             try {
                 const response = await fetch(
-                    `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(value)}&limit=5`
+                    `/api/geo/search?q=${encodeURIComponent(value)}&limit=5`
                 );
                 const data = await response.json();
 
